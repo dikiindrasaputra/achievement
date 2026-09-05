@@ -31,8 +31,10 @@
                         </button>
                     </div>
                 </div>
+
+                {{-- Desktop: Table view --}}
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-sm hidden lg:table">
                         <thead>
                             <tr class="text-xs text-gray-500 border-b">
                                 <th class="text-left py-2 px-2">Rider Name</th>
@@ -107,6 +109,71 @@
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                {{-- Mobile: Card view --}}
+                <div class="lg:hidden space-y-3">
+                    @forelse ($productivity as $person)
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                            {{-- Header: Rank + Name + Status --}}
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-white shrink-0"
+                                      style="background-color: {{ $person['rank'] <= 3 ? ($person['rank'] == 1 ? '#16a34a' : ($person['rank'] == 2 ? '#22c55e' : '#4ade80')) : '#9ca3af' }};">
+                                    {{ $person['rank'] }}
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-semibold text-gray-800 truncate">{{ $person['name'] }}</div>
+                                    <div class="text-[11px] text-gray-400">{{ $person['nip'] }}</div>
+                                </div>
+                                <span class="text-xs font-medium px-2 py-1 rounded-full shrink-0 {{ $person['weekly_avg'] >= $person['daily_target'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $person['weekly_avg'] >= $person['daily_target'] ? 'Achieved' : 'Not Achieved' }}
+                                </span>
+                            </div>
+
+                            {{-- Stats row --}}
+                            <div class="grid grid-cols-4 gap-2 text-center mb-3">
+                                <div>
+                                    <div class="text-[10px] text-gray-400">Daily</div>
+                                    <div class="text-xs font-bold text-gray-800">{{ $person['daily_target'] }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400">Weekly</div>
+                                    <div class="text-xs font-bold text-gray-800">{{ $person['weekly_target'] }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400">Total</div>
+                                    <div class="text-xs font-bold text-gray-800">{{ $person['total_achievement'] }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-gray-400">GAP</div>
+                                    <div class="text-xs font-bold {{ $person['gap'] > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                        {{ $person['gap'] > 0 ? '-' . $person['gap'] : '+' . abs($person['gap']) }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Day chips --}}
+                            <div class="grid grid-cols-7 gap-1">
+                                @foreach ($weekDays as $day)
+                                    @php $dayData = $person['days'][$day['day_number']] ?? null; @endphp
+                                    <div class="text-center rounded-md py-1.5 {{ $day['is_today'] ? 'border border-orange-300 bg-orange-50' : 'bg-white border border-gray-100' }}">
+                                        <div class="text-[9px] text-gray-400 leading-none">{{ $day['day_name'] }}</div>
+                                        @if ($dayData && $dayData['is_whitelisted'])
+                                            <div class="text-[10px] text-purple-400 font-medium leading-tight mt-0.5">OFF</div>
+                                        @elseif ($dayData && $dayData['achievement'] > 0)
+                                            <div class="text-[11px] text-green-600 font-bold leading-tight mt-0.5">{{ $dayData['achievement'] }}</div>
+                                        @elseif ($day['is_past'])
+                                            <div class="text-[11px] text-red-400 font-bold leading-tight mt-0.5">0</div>
+                                        @else
+                                            <div class="text-[11px] text-gray-300 leading-tight mt-0.5">-</div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8 text-gray-400">Belum ada data pencapaian</div>
+                    @endforelse
                 </div>
             </div>
 
@@ -207,13 +274,12 @@
 
             // Data rows
             table.querySelectorAll('tbody tr').forEach(tr => {
-                if (tr.querySelector('td[colspan]')) return; // skip empty row
+                if (tr.querySelector('td[colspan]')) return;
                 html += '<tr>';
                 tr.querySelectorAll('td').forEach((td, idx) => {
                     let text = td.innerText.replace(/\n/g, ' ').trim();
                     let style = 'padding:5px;text-align:center;font-size:10pt;';
 
-                    // Rank column (last) - colored badge
                     if (idx === tr.querySelectorAll('td').length - 1) {
                         const rank = parseInt(text);
                         if (rank === 1) style += 'background-color:#16a34a;color:white;font-weight:bold;text-align:center;';
@@ -221,25 +287,21 @@
                         else if (rank === 3) style += 'background-color:#4ade80;color:white;font-weight:bold;text-align:center;';
                         else style += 'background-color:#D1D5DB;text-align:center;';
                     }
-                    // Status column (second to last)
                     else if (text === 'Achieved') {
                         style += 'background-color:#DCFCE7;color:#166534;font-weight:bold;';
                     }
                     else if (text === 'Not Achieved') {
                         style += 'background-color:#FEE2E2;color:#991B1B;font-weight:bold;';
                     }
-                    // Name column (first) - left align
                     else if (idx === 0) {
                         style += 'text-align:left;font-weight:bold;';
                     }
-                    // GAP column - red if negative
                     else if (text.startsWith('-')) {
                         style += 'color:#DC2626;font-weight:bold;';
                     }
                     else if (text.startsWith('+')) {
                         style += 'color:#16A34A;font-weight:bold;';
                     }
-                    // Numeric columns - center
                     else {
                         style += 'font-weight:bold;';
                     }
