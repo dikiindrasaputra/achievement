@@ -117,6 +117,15 @@
                     $productivityJson = json_encode($productivity->values());
                 @endphp
                 <div class="lg:hidden" x-data="mobileCards()" x-init="init()">
+                    <div class="mb-3">
+                        <div class="relative">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" x-model="search" @input.debounce.300ms="filterCards()" placeholder="Cari nama atau NIP..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
+                        </div>
+                    </div>
                     <div class="space-y-3">
                         <template x-for="(person, idx) in visibleCards" :key="person.nip">
                             <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
@@ -289,8 +298,10 @@
         function mobileCards() {
             return {
                 allCards: [],
+                filteredCards: [],
                 visibleCards: [],
                 weekDays: [],
+                search: '',
                 page: 0,
                 perPage: 7,
                 hasMore: true,
@@ -299,6 +310,7 @@
                 init() {
                     this.allCards = {!! $productivityJson !!};
                     this.weekDays = {!! $weekDaysJson !!};
+                    this.filteredCards = this.allCards;
                     this.loadMore();
 
                     const observer = new IntersectionObserver((entries) => {
@@ -315,17 +327,32 @@
                     });
                 },
 
+                filterCards() {
+                    const q = this.search.toLowerCase();
+                    if (!q) {
+                        this.filteredCards = this.allCards;
+                    } else {
+                        this.filteredCards = this.allCards.filter(p =>
+                            p.name.toLowerCase().includes(q) || p.nip.includes(q)
+                        );
+                    }
+                    this.page = 0;
+                    this.visibleCards = [];
+                    this.hasMore = true;
+                    this.loadMore();
+                },
+
                 loadMore() {
                     this.loading = true;
                     setTimeout(() => {
                         const start = this.page * this.perPage;
                         const end = start + this.perPage;
-                        const next = this.allCards.slice(start, end);
+                        const next = this.filteredCards.slice(start, end);
                         this.visibleCards = [...this.visibleCards, ...next];
                         this.page++;
-                        this.hasMore = end < this.allCards.length;
+                        this.hasMore = end < this.filteredCards.length;
                         this.loading = false;
-                    }, 300);
+                    }, 200);
                 },
             };
         }
