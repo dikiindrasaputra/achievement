@@ -12,6 +12,7 @@ class LandingPageController extends Controller
 {
     private function getWeekInfo()
     {
+        Carbon::setLocale('id');
         $now = Carbon::now();
         $manpowerModel = new Manpower();
         $weekNumber = $manpowerModel->getWeekNumber($now);

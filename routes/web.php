@@ -13,6 +13,7 @@ Route::get('/', [LandingPageController::class, 'index'])->name('landing');
 Route::get('/api/landing/load-more', [LandingPageController::class, 'loadMore'])->name('landing.load-more');
 
 Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
+    \Carbon\Carbon::setLocale('id');
     $now = \Carbon\Carbon::now();
     $manpowerModel = new \App\Models\Manpower();
     $weekNumber = $manpowerModel->getWeekNumber($now);
