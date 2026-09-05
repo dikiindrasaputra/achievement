@@ -1,12 +1,40 @@
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Week Navigation -->
+            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <a href="{{ route('dashboard', array_merge(['date' => $prevWeek->format('Y-m-d')], request()->except('date'))) }}"
+                       class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <span class="hidden sm:inline">Minggu Sebelumnya</span>
+                    </a>
+                    <div class="text-center">
+                        <div class="text-sm font-semibold text-gray-800">Minggu {{ $weekNumber }}</div>
+                        <div class="text-xs text-gray-500">{{ $weekStart->format('d M') }} – {{ $weekEnd->format('d M Y') }}</div>
+                        @if (!$isCurrentWeek)
+                            <a href="{{ route('dashboard', request()->except('date')) }}" class="text-xs text-orange-500 hover:text-orange-600 mt-0.5 inline-block">
+                                Kembali ke minggu ini
+                            </a>
+                        @endif
+                    </div>
+                    <a href="{{ route('dashboard', array_merge(['date' => $nextWeek->format('Y-m-d')], request()->except('date'))) }}"
+                       class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition">
+                        <span class="hidden sm:inline">Minggu Berikutnya</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </a>
+                </div>
+            </div>
+
             <!-- Productivity by Delivered -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-8">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                     <h3 class="text-lg font-semibold">Productivity by Delivered</h3>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2 flex-1 sm:flex-none">
+                        <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2 flex-1 sm:flex-none" id="filterForm">
+                            @if($selectedDate)
+                                <input type="hidden" name="date" value="{{ $selectedDate->format('Y-m-d') }}">
+                            @endif
                             <select name="contract_type" onchange="this.form.submit()" class="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-orange-500 focus:ring-orange-500">
                                 <option value="">All Contract</option>
                                 <option value="dedicated" {{ ($contractType ?? '') === 'dedicated' ? 'selected' : '' }}>Dedicated</option>
@@ -213,15 +241,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Recent Achievements -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4">Today's Achievements</h3>
+                    <h3 class="text-lg font-semibold mb-4">Pencapaian Minggu Ini</h3>
                     @php
-                        $todayAchievements = \App\Models\Achievement::with('manpower')
-                            ->where('date', now()->toDateString())
+                        $weekAchievements = \App\Models\Achievement::with('manpower')
+                            ->whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])
                             ->orderByDesc('achievement')
                             ->limit(10)
                             ->get();
                     @endphp
-                    @forelse ($todayAchievements as $achievement)
+                    @forelse ($weekAchievements as $achievement)
                         <div class="flex justify-between items-center py-2 {{ !$loop->last ? 'border-b border-gray-100 dark:border-gray-700' : '' }}">
                             <div>
                                 <span class="font-semibold text-sm text-gray-800">{{ $achievement->manpower->full_name }}</span>
@@ -232,7 +260,7 @@
                             </span>
                         </div>
                     @empty
-                        <p class="text-gray-500 text-sm">No achievements recorded today.</p>
+                        <p class="text-gray-500 text-sm">Belum ada pencapaian minggu ini.</p>
                     @endforelse
                 </div>
 
@@ -418,7 +446,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'productivity_by_delivered_{{ now()->format("Y-m-d") }}.xls';
+            a.download = 'productivity_by_delivered_{{ $selectedDate->format("Y-m-d") }}.xls';
             a.click();
             URL.revokeObjectURL(url);
         }

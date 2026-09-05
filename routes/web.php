@@ -14,11 +14,16 @@ Route::get('/api/landing/load-more', [LandingPageController::class, 'loadMore'])
 
 Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
     \Carbon\Carbon::setLocale('id');
+    $selectedDate = $request->input('date') ? \Carbon\Carbon::parse($request->input('date')) : \Carbon\Carbon::now();
     $now = \Carbon\Carbon::now();
     $manpowerModel = new \App\Models\Manpower();
-    $weekNumber = $manpowerModel->getWeekNumber($now);
-    $weekStart = $manpowerModel->getWeekStartDate($now);
-    $weekEnd = $manpowerModel->getWeekEndDate($now);
+    $weekNumber = $manpowerModel->getWeekNumber($selectedDate);
+    $weekStart = $manpowerModel->getWeekStartDate($selectedDate);
+    $weekEnd = $manpowerModel->getWeekEndDate($selectedDate);
+
+    $prevWeek = $weekStart->copy()->subWeek()->startOfWeek();
+    $nextWeek = $weekStart->copy()->addWeek()->startOfWeek();
+    $isCurrentWeek = $weekStart->isSameWeek($now);
 
     $contractType = $request->input('contract_type');
     $vehicleType = $request->input('vehicle_type');
@@ -142,7 +147,7 @@ Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         return $item;
     });
 
-    return view('dashboard', compact('productivity', 'weekDays', 'weekNumber', 'weekStart', 'weekEnd', 'contractType', 'vehicleType'));
+    return view('dashboard', compact('productivity', 'weekDays', 'weekNumber', 'weekStart', 'weekEnd', 'contractType', 'vehicleType', 'prevWeek', 'nextWeek', 'isCurrentWeek', 'selectedDate'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
