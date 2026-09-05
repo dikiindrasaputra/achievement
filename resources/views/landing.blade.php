@@ -109,16 +109,16 @@
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
-                    <input type="text" x-model="search" placeholder="Cari nama atau NIP..."
+                    <input type="text" x-model="search" @input.debounce.400ms="doSearch()" placeholder="Cari nama atau NIP..."
                            class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
                 </div>
-                <select x-model="contractFilter"
+                <select x-model="contractFilter" @change="doSearch()"
                         class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
                     <option value="all">Semua Kontrak</option>
                     <option value="dedicated">Dedicated</option>
                     <option value="mitra">Mitra</option>
                 </select>
-                <select x-model="vehicleFilter"
+                <select x-model="vehicleFilter" @change="doSearch()"
                         class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
                     <option value="all">Semua Kendaraan</option>
                     <option value="2wh">2 Wheel</option>
@@ -135,8 +135,7 @@
 
         <template x-for="(person, pIdx) in people" :key="person.id">
             <div class="bg-white rounded-lg shadow-sm mb-4 overflow-hidden"
-                 x-data="personData(person)"
-                 x-show="(search === '' || name.toLowerCase().includes(search.toLowerCase()) || nip.includes(search)) && (contractFilter === 'all' || contract_type === contractFilter) && (vehicleFilter === 'all' || vehicleType === vehicleFilter)">
+                 x-data="personData(person)">
                 {{-- Header --}}
                 <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer"
                      @click="expanded = !expanded">
@@ -367,6 +366,7 @@
                 page: 1,
                 hasMore: true,
                 loading: false,
+                searchTimeout: null,
 
                 init() {
                     const el = document.getElementById('initial-data');
@@ -389,22 +389,47 @@
                     });
                 },
 
-                loadMore() {
-                    if (this.loading || !this.hasMore) return;
-                    this.loading = true;
-                    this.page++;
+                buildParams() {
+                    const params = new URLSearchParams();
+                    if (this.search) params.set('search', this.search);
+                    if (this.contractFilter !== 'all') params.set('contract_type', this.contractFilter);
+                    if (this.vehicleFilter !== 'all') params.set('vehicle_type', this.vehicleFilter);
+                    return params.toString();
+                },
 
-                    fetch('{{ route("landing.load-more") }}?page=' + this.page)
+                doSearch() {
+                    this.page = 1;
+                    this.people = [];
+                    this.hasMore = true;
+                    this.fetchData(1, true);
+                },
+
+                fetchData(page, replace = false) {
+                    this.loading = true;
+                    const params = this.buildParams();
+                    const url = '{{ route("landing.load-more") }}?page=' + page + (params ? '&' + params : '');
+
+                    fetch(url)
                         .then(response => response.json())
                         .then(result => {
-                            this.people = [...this.people, ...result.data];
+                            if (replace) {
+                                this.people = result.data;
+                            } else {
+                                this.people = [...this.people, ...result.data];
+                            }
                             this.hasMore = result.hasMore;
                             this.loading = false;
                         })
                         .catch(() => {
                             this.loading = false;
-                            this.page--;
+                            if (!replace) this.page--;
                         });
+                },
+
+                loadMore() {
+                    if (this.loading || !this.hasMore) return;
+                    this.page++;
+                    this.fetchData(this.page);
                 },
             };
         }

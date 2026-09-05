@@ -139,9 +139,9 @@ class LandingPageController extends Controller
         ];
     }
 
-    private function getManpowerQuery($weekStart, $weekEnd)
+    private function getManpowerQuery($weekStart, $weekEnd, $search = null, $contractType = null, $vehicleType = null)
     {
-        return Manpower::active()
+        $query = Manpower::active()
             ->whereHas('targets', function ($q) use ($weekStart, $weekEnd) {
                 $q->whereHas('target', function ($q2) use ($weekStart, $weekEnd) {
                     $q2->where('start_date', '<=', $weekEnd)
@@ -161,16 +161,36 @@ class LandingPageController extends Controller
                 'whitelists' => function ($q) use ($weekStart, $weekEnd) {
                     $q->whereBetween('date', [$weekStart, $weekEnd]);
                 },
-            ])
-            ->orderBy('nip');
+            ]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('nip', 'like', "%{$search}%");
+            });
+        }
+
+        if ($contractType && in_array($contractType, ['dedicated', 'mitra'])) {
+            $query->where('contract_type', $contractType);
+        }
+
+        if ($vehicleType && in_array($vehicleType, ['2wh', '4wh'])) {
+            $query->where('vehicle_type', $vehicleType);
+        }
+
+        return $query->orderBy('nip');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         extract($this->getWeekInfo());
 
+        $search = $request->input('search');
+        $contractType = $request->input('contract_type');
+        $vehicleType = $request->input('vehicle_type');
+
         $perPage = 20;
-        $paginator = $this->getManpowerQuery($weekStart, $weekEnd)
+        $paginator = $this->getManpowerQuery($weekStart, $weekEnd, $search, $contractType, $vehicleType)
             ->paginate($perPage);
 
         $data = $paginator->map(fn($person) => $this->buildPersonData($person, $weekDays, $now));
@@ -216,9 +236,12 @@ class LandingPageController extends Controller
         extract($this->getWeekInfo());
 
         $page = $request->page ?? 2;
+        $search = $request->input('search');
+        $contractType = $request->input('contract_type');
+        $vehicleType = $request->input('vehicle_type');
         $perPage = 20;
 
-        $paginator = $this->getManpowerQuery($weekStart, $weekEnd)
+        $paginator = $this->getManpowerQuery($weekStart, $weekEnd, $search, $contractType, $vehicleType)
             ->paginate($perPage, ['*'], 'page', $page);
 
         $data = $paginator->map(fn($person) => $this->buildPersonData($person, $weekDays, $now));
