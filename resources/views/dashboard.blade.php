@@ -8,14 +8,28 @@
 
             <!-- Productivity by Delivered -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-8">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
                     <h3 class="text-lg font-semibold">Productivity by Delivered</h3>
-                    <button onclick="exportToExcel()" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        Export Excel
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-2">
+                            <select name="contract_type" onchange="this.form.submit()" class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                                <option value="">All Contract</option>
+                                <option value="dedicated" {{ ($contractType ?? '') === 'dedicated' ? 'selected' : '' }}>Dedicated</option>
+                                <option value="mitra" {{ ($contractType ?? '') === 'mitra' ? 'selected' : '' }}>Mitra</option>
+                            </select>
+                            <select name="vehicle_type" onchange="this.form.submit()" class="text-sm border-gray-300 rounded-lg shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                                <option value="">All Vehicle</option>
+                                <option value="2wh" {{ ($vehicleType ?? '') === '2wh' ? 'selected' : '' }}>2 Wheels</option>
+                                <option value="4wh" {{ ($vehicleType ?? '') === '4wh' ? 'selected' : '' }}>4 Wheels</option>
+                            </select>
+                        </form>
+                        <button onclick="exportToExcel()" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Export Excel
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">

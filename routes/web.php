@@ -12,12 +12,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingPageController::class, 'index'])->name('landing');
 Route::get('/api/landing/load-more', [LandingPageController::class, 'loadMore'])->name('landing.load-more');
 
-Route::get('/dashboard', function () {
+Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
     $now = \Carbon\Carbon::now();
     $manpowerModel = new \App\Models\Manpower();
     $weekNumber = $manpowerModel->getWeekNumber($now);
     $weekStart = $manpowerModel->getWeekStartDate($now);
     $weekEnd = $manpowerModel->getWeekEndDate($now);
+
+    $contractType = $request->input('contract_type');
+    $vehicleType = $request->input('vehicle_type');
 
     // Build week days
     $weekDays = [];
@@ -33,7 +36,7 @@ Route::get('/dashboard', function () {
         ];
     }
 
-    $manpower = \App\Models\Manpower::active()
+    $query = \App\Models\Manpower::active()
         ->with([
             'targets' => function ($q) use ($weekStart, $weekEnd) {
                 $q->whereHas('target', function ($q2) use ($weekStart, $weekEnd) {
@@ -47,8 +50,16 @@ Route::get('/dashboard', function () {
             'whitelists' => function ($q) use ($weekStart, $weekEnd) {
                 $q->whereBetween('date', [$weekStart, $weekEnd]);
             },
-        ])
-        ->orderBy('nip')
+        ]);
+
+    if ($contractType && in_array($contractType, ['dedicated', 'mitra'])) {
+        $query->where('contract_type', $contractType);
+    }
+    if ($vehicleType && in_array($vehicleType, ['2wh', '4wh'])) {
+        $query->where('vehicle_type', $vehicleType);
+    }
+
+    $manpower = $query->orderBy('nip')
         ->get()
         ->filter(fn($p) => $p->targets->isNotEmpty())
         ->values();
@@ -56,7 +67,7 @@ Route::get('/dashboard', function () {
     $productivity = $manpower->map(function ($person) use ($weekDays, $now) {
         $targetItem = $person->targets->first();
         $dailyTarget = $targetItem->daily_target;
-        $weeklyTarget = $dailyTarget * 6;
+        $weeklyTarget = $targetItem->weekly_target;
 
         $achievements = $person->achievements->keyBy(fn($a) => $a->date->format('Y-m-d'));
         $whitelists = $person->whitelists->keyBy(fn($w) => $w->date->format('Y-m-d'));
@@ -75,18 +86,15 @@ Route::get('/dashboard', function () {
             $hasAchievement = $achievementRecord !== null;
             $achievementValue = $hasAchievement ? $achievementRecord->achievement : 0;
 
-            // Day 1 = awal minggu, reset carryover
             if ($dayNumber === 1) {
                 $carryover = 0;
             }
 
-            // Whitelist = skip
             if ($isWhitelisted) {
                 $days[$dayNumber] = ['achievement' => null, 'is_whitelisted' => true, 'carryover' => 0, 'effective_target' => 0];
                 continue;
             }
 
-            // Check start_date
             $personStart = $person->start_date ? \Carbon\Carbon::parse($person->start_date) : null;
             if ($personStart && $dayCarbon->lt($personStart)) {
                 $days[$dayNumber] = ['achievement' => 0, 'is_whitelisted' => false, 'carryover' => 0, 'effective_target' => 0];
@@ -116,6 +124,8 @@ Route::get('/dashboard', function () {
         return [
             'name' => $person->full_name,
             'nip' => $person->nip,
+            'contract_type' => $person->contract_type,
+            'vehicle_type' => $person->vehicle_type,
             'daily_target' => $dailyTarget,
             'weekly_target' => $weeklyTarget,
             'days' => $days,
@@ -126,13 +136,12 @@ Route::get('/dashboard', function () {
         ];
     })->sortByDesc('total_achievement')->values();
 
-    // Assign rank
     $productivity = $productivity->map(function ($item, $idx) {
         $item['rank'] = $idx + 1;
         return $item;
     });
 
-    return view('dashboard', compact('productivity', 'weekDays', 'weekNumber', 'weekStart', 'weekEnd'));
+    return view('dashboard', compact('productivity', 'weekDays', 'weekNumber', 'weekStart', 'weekEnd', 'contractType', 'vehicleType'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');

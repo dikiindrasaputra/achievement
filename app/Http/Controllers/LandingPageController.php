@@ -122,7 +122,7 @@ class LandingPageController extends Controller
         $remainingDays = $futureDays + ($currentDayNeedsInput ? 1 : 0);
         if (!$hasPastWhitelist && $currentDayNeedsInput) $remainingDays = max(1, $remainingDays);
 
-        $weeklyTargetConst = $dailyTarget * 6;
+        $weeklyTargetConst = $targetItem->weekly_target;
 
         return [
             'id' => $person->id,
@@ -193,7 +193,7 @@ class LandingPageController extends Controller
                 'name' => $person->full_name,
                 'nip' => $person->nip,
                 'weekly_achievement' => $person->achievements->sum('achievement'),
-                'weekly_target' => ($person->targets->first()->daily_target ?? 0) * 6,
+                'weekly_target' => $person->targets->first()->weekly_target ?? 0,
             ])
             ->sortByDesc('weekly_achievement')
             ->take(5)
