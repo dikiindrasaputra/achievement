@@ -1,206 +1,183 @@
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Page Title -->
-            <div class="mb-6">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Edit Target: {{ $target->name }}</h2>
+            {{-- Header: Back + Title --}}
+            <div class="flex items-center gap-3 mb-6">
+                <a href="{{ route('targets.index') }}" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition shrink-0">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </a>
+                <h2 class="text-lg font-bold text-gray-800 dark:text-gray-200 truncate">Edit: {{ $target->name }}</h2>
             </div>
 
             <form action="{{ route('targets.update', $target) }}" method="POST" id="targetForm">
                 @csrf
                 @method('PUT')
 
-                <!-- Target Info -->
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold mb-4">Target Information</h3>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
+                {{-- Target Info --}}
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4 sm:p-6 mb-4">
+                    <h3 class="text-sm font-semibold mb-3 text-gray-700">Informasi Target</h3>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Target Name</label>
-                            <input type="text" name="name" value="{{ old('name', $target->name) }}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            @error('name') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Nama Target</label>
+                            <input type="text" name="name" value="{{ old('name', $target->name) }}" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm">
+                            @error('name') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Monthly Target</label>
-                            <input type="number" name="monthly_target" value="{{ old('monthly_target', $target->monthly_target) }}" min="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            @error('monthly_target') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Monthly Target</label>
+                            <input type="number" name="monthly_target" value="{{ old('monthly_target', $target->monthly_target) }}" min="0" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm">
+                            @error('monthly_target') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
-                    <!-- Year & Week Selection -->
-                    <div class="grid grid-cols-3 gap-4 mb-4">
+                    {{-- Year & Week --}}
+                    <div class="grid grid-cols-3 gap-3 mb-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Year</label>
-                            <input type="number" name="year" id="targetYear" value="{{ old('year', $target->year) }}" min="2024" required onchange="updateWeekDates()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            @error('year') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Tahun</label>
+                            <input type="number" name="year" id="targetYear" value="{{ old('year', $target->year) }}" min="2024" required onchange="updateWeekDates()" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm">
+                            @error('year') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Week Number</label>
-                            <input type="number" name="week_number" id="targetWeekNumber" value="{{ old('week_number', $target->week_number) }}" min="1" max="53" required onchange="updateWeekDates()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            @error('week_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Minggu</label>
+                            <input type="number" name="week_number" id="targetWeekNumber" value="{{ old('week_number', $target->week_number) }}" min="1" max="53" required onchange="updateWeekDates()" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm">
+                            @error('week_number') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Period (Auto-calculated)</label>
-                            <div class="mt-1 block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700" id="weekPeriodDisplay">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Periode</label>
+                            <div class="block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 min-h-[38px] flex items-center" id="weekPeriodDisplay">
                                 {{ $target->start_date->format('d M') }} - {{ $target->end_date->format('d M Y') }}
                             </div>
                         </div>
                     </div>
 
-                    <!-- Weekly Target -->
-                    <div class="grid grid-cols-2 gap-4 mb-4">
+                    {{-- Weekly Target --}}
+                    <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Weekly Target (per orang)</label>
-                            <input type="number" name="weekly_target_global" id="weekly_target_global" value="{{ old('weekly_target_global', $target->items->first()->weekly_target ?? 0) }}" min="0" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            @error('weekly_target_global') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Weekly Target/orang</label>
+                            <input type="number" name="weekly_target_global" id="weekly_target_global" value="{{ old('weekly_target_global', $target->items->first()->weekly_target ?? 0) }}" min="0" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm">
+                            @error('weekly_target_global') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Apply All Days in Week</label>
-                            <div class="mt-2 flex items-center h-10">
-                                <input type="checkbox" name="apply_all_days" id="apply_all_days" value="1" {{ old('apply_all_days', $target->apply_all_days) ? 'checked' : '' }} onchange="toggleDayInputs()" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <label for="apply_all_days" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                                    Centang = Daily Target masuk ke Day 1-6
-                                </label>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Apply All Days</label>
+                            <div class="flex items-center h-10">
+                                <input type="checkbox" name="apply_all_days" id="apply_all_days" value="1" {{ old('apply_all_days', $target->apply_all_days) ? 'checked' : '' }} onchange="toggleDayInputs()" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500">
+                                <label for="apply_all_days" class="ml-2 text-xs text-gray-500">Daily → Day 1-6</label>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Daily Target (saat Apply All Days) -->
+                    {{-- Daily Target (apply_all_days) --}}
                     @php $existingItem = $target->items->first(); @endphp
                     <div id="dailySection" class="{{ old('apply_all_days', $target->apply_all_days) ? '' : 'hidden' }}">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Daily Target (per orang)</label>
-                                <input type="number" name="daily_target_global" id="daily_target_global" value="{{ old('daily_target_global', $existingItem->daily_target ?? 0) }}" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                @error('daily_target_global') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                                <p class="mt-1 text-xs text-gray-500">Angka ini akan masuk ke Day 1 sampai Day 6</p>
+                                <label class="block text-xs font-medium text-gray-500 mb-1">Daily Target/orang</label>
+                                <input type="number" name="daily_target_global" id="daily_target_global" value="{{ old('daily_target_global', $existingItem->daily_target ?? 0) }}" min="0" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm">
+                                @error('daily_target_global') <p class="text-red-500 text-[11px] mt-1">{{ $message }}</p> @enderror
+                                <p class="text-[10px] text-gray-400 mt-0.5">Masuk ke Day 1-6</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Day 1-6 Inputs (saat tidak Apply All Days) -->
+                    {{-- Day 1-6 (custom) --}}
                     <div id="daySection" class="{{ old('apply_all_days', $target->apply_all_days) ? 'hidden' : '' }}">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Target Per Hari (per orang)</label>
-                        <div class="grid grid-cols-6 gap-4">
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Day 1</label>
-                                <input type="number" name="day_1_global" value="{{ old('day_1_global', $existingItem->day_1 ?? 0) }}" min="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Day 2</label>
-                                <input type="number" name="day_2_global" value="{{ old('day_2_global', $existingItem->day_2 ?? 0) }}" min="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Day 3</label>
-                                <input type="number" name="day_3_global" value="{{ old('day_3_global', $existingItem->day_3 ?? 0) }}" min="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Day 4</label>
-                                <input type="number" name="day_4_global" value="{{ old('day_4_global', $existingItem->day_4 ?? 0) }}" min="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Day 5</label>
-                                <input type="number" name="day_5_global" value="{{ old('day_5_global', $existingItem->day_5 ?? 0) }}" min="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Day 6</label>
-                                <input type="number" name="day_6_global" value="{{ old('day_6_global', $existingItem->day_6 ?? 0) }}" min="0" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center">
-                            </div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Target Per Hari</label>
+                        <div class="grid grid-cols-6 gap-2">
+                            @foreach([1,2,3,4,5,6] as $d)
+                                <div>
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">D{{ $d }}</label>
+                                    <input type="number" name="day_{{ $d }}_global" value="{{ old("day_{$d}_global", $existingItem->{"day_$d"} ?? 0) }}" min="0" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm text-center">
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
 
-                <!-- Manpower Selection -->
-                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Select Manpower</h3>
-                        <div class="flex gap-2">
-                            <button type="button" onclick="selectAll()" class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700">Select All</button>
-                            <button type="button" onclick="deselectAll()" class="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700">Deselect All</button>
+                {{-- Manpower Selection --}}
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4 sm:p-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-gray-700">Pilih Manpower</h3>
+                        <div class="flex gap-1.5">
+                            <button type="button" onclick="selectAll()" class="px-2.5 py-1 bg-green-600 text-white text-[11px] font-medium rounded-lg hover:bg-green-700 transition">All</button>
+                            <button type="button" onclick="deselectAll()" class="px-2.5 py-1 bg-gray-500 text-white text-[11px] font-medium rounded-lg hover:bg-gray-600 transition">Clear</button>
                         </div>
                     </div>
 
-                    <!-- Filters -->
-                    <div class="flex gap-4 mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Contract Type</label>
-                            <select id="filterContract" onchange="filterManpower()" class="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="">All</option>
-                                <option value="dedicated">Dedicated</option>
-                                <option value="mitra">Mitra</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Vehicle Type</label>
-                            <select id="filterVehicle" onchange="filterManpower()" class="mt-1 block rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                <option value="">All</option>
-                                <option value="2wh">2 Wheels</option>
-                                <option value="4wh">4 Wheels</option>
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Search</label>
-                            <input type="text" id="filterSearch" onkeyup="filterManpower()" placeholder="NIP or Name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                        </div>
+                    {{-- Filters --}}
+                    <div class="flex gap-2 mb-3">
+                        <select id="filterContract" onchange="filterManpower()" class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
+                            <option value="">Semua Kontrak</option>
+                            <option value="dedicated">Dedicated</option>
+                            <option value="mitra">Mitra</option>
+                        </select>
+                        <select id="filterVehicle" onchange="filterManpower()" class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
+                            <option value="">Semua Kendaraan</option>
+                            <option value="2wh">2 Wheels</option>
+                            <option value="4wh">4 Wheels</option>
+                        </select>
+                        <input type="text" id="filterSearch" onkeyup="filterManpower()" placeholder="Cari..." class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
                     </div>
 
-                    @error('manpower_ids') <p class="text-red-500 text-xs mb-2">{{ $message }}</p> @enderror
+                    @error('manpower_ids') <p class="text-red-500 text-[11px] mb-2">{{ $message }}</p> @enderror
 
-                    <!-- Manpower Table -->
+                    {{-- Manpower Table --}}
                     <div class="overflow-x-auto max-h-96 overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead class="bg-gray-100 dark:bg-gray-600 sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-2 text-left">
-                                        <input type="checkbox" id="checkAll" onchange="toggleAll(this)" class="rounded border-gray-300 text-indigo-600">
-                                    </th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">NIP</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Contract</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vehicle</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Current Week</th>
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                <tr class="text-[11px] text-gray-500">
+                                    <th class="px-2 py-2 text-left"><input type="checkbox" id="checkAll" onchange="toggleAll(this)" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500"></th>
+                                    <th class="px-2 py-2 text-left">NIP</th>
+                                    <th class="px-2 py-2 text-left">Name</th>
+                                    <th class="px-2 py-2 text-left hidden sm:table-cell">Contract</th>
+                                    <th class="px-2 py-2 text-left hidden sm:table-cell">Vehicle</th>
+                                    <th class="px-2 py-2 text-left hidden sm:table-cell">Start</th>
+                                    <th class="px-2 py-2 text-center hidden sm:table-cell">Week</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody class="divide-y divide-gray-50">
                                 @foreach ($manpower as $person)
                                     @php
                                         $isInTarget = $target->items->contains('manpower_id', $person->id);
                                     @endphp
-                                    <tr class="manpower-row" 
-                                        data-contract="{{ $person->contract_type }}" 
+                                    <tr class="manpower-row hover:bg-gray-50"
+                                        data-contract="{{ $person->contract_type }}"
                                         data-vehicle="{{ $person->vehicle_type }}"
                                         data-nip="{{ $person->nip }}"
                                         data-name="{{ strtolower($person->full_name) }}">
-                                        <td class="px-4 py-2">
-                                            <input type="checkbox" name="manpower_ids[]" value="{{ $person->id }}" {{ $isInTarget ? 'checked' : '' }} class="manpower-check rounded border-gray-300 text-indigo-600">
+                                        <td class="px-2 py-2">
+                                            <input type="checkbox" name="manpower_ids[]" value="{{ $person->id }}" {{ $isInTarget ? 'checked' : '' }} class="manpower-check rounded border-gray-300 text-orange-600 focus:ring-orange-500">
                                         </td>
-                                        <td class="px-4 py-2 text-sm font-mono">{{ $person->nip }}</td>
-                                        <td class="px-4 py-2 text-sm">{{ $person->full_name }}</td>
-                                        <td class="px-4 py-2 text-sm">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $person->contract_type == 'dedicated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                        <td class="px-2 py-2 font-mono text-xs">{{ $person->nip }}</td>
+                                        <td class="px-2 py-2">
+                                            <div class="font-medium text-xs truncate max-w-[120px] sm:max-w-none">{{ $person->full_name }}</div>
+                                            <div class="text-[10px] text-gray-400 sm:hidden">
+                                                <span class="px-1 py-0.5 rounded {{ $person->contract_type == 'dedicated' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">{{ ucfirst($person->contract_type) }}</span>
+                                                <span class="px-1 py-0.5 rounded {{ $person->vehicle_type == '2wh' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700' }}">{{ strtoupper($person->vehicle_type) }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-2 py-2 hidden sm:table-cell">
+                                            <span class="px-2 inline-flex text-xs font-semibold rounded-full {{ $person->contract_type == 'dedicated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
                                                 {{ ucfirst($person->contract_type) }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-2 text-sm">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $person->vehicle_type == '2wh' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
+                                        <td class="px-2 py-2 hidden sm:table-cell">
+                                            <span class="px-2 inline-flex text-xs font-semibold rounded-full {{ $person->vehicle_type == '2wh' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">
                                                 {{ strtoupper($person->vehicle_type) }}
                                             </span>
                                         </td>
-                                        <td class="px-4 py-2 text-sm">{{ $person->start_date->format('d M Y') }}</td>
-                                        <td class="px-4 py-2 text-sm text-center">Week {{ $person->getWeekNumber() }}</td>
+                                        <td class="px-2 py-2 text-xs hidden sm:table-cell">{{ $person->start_date->format('d M Y') }}</td>
+                                        <td class="px-2 py-2 text-xs text-center hidden sm:table-cell">Wk {{ $person->getWeekNumber() }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="mt-4 flex justify-between items-center">
-                        <p class="text-sm text-gray-600">
-                            Selected: <span id="selectedCount" class="font-semibold">{{ $target->items->count() }}</span> manpower
-                        </p>
+                    {{-- Bottom bar --}}
+                    <div class="mt-4 flex items-center justify-between">
+                        <p class="text-xs text-gray-500">Terpilih: <span id="selectedCount" class="font-bold text-gray-800">{{ $target->items->count() }}</span></p>
                         <div class="flex gap-2">
-                            <a href="{{ route('targets.index') }}" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Cancel</a>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Update Target</button>
+                            <a href="{{ route('targets.index') }}" class="px-3 py-2 bg-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-300 transition">Batal</a>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition">Update Target</button>
                         </div>
                     </div>
                 </div>
@@ -212,30 +189,18 @@
         function updateWeekDates() {
             const year = document.getElementById('targetYear').value;
             const weekNumber = document.getElementById('targetWeekNumber').value;
-            
-            if (!year || !weekNumber) {
-                document.getElementById('weekPeriodDisplay').textContent = '-';
-                return;
-            }
-
-            // ISO 8601: January 4 is always in Week 1
+            if (!year || !weekNumber) { document.getElementById('weekPeriodDisplay').textContent = '-'; return; }
             const jan4 = new Date(year, 0, 4);
-            // Find Monday of Week 1 (dayOfWeek: 0=Sun,1=Mon...6=Sat → ISO: 1=Mon...7=Sun)
             const dayOfWeek = jan4.getDay() === 0 ? 7 : jan4.getDay();
             const week1Monday = new Date(jan4);
             week1Monday.setDate(jan4.getDate() - (dayOfWeek - 1));
-
             const startDate = new Date(week1Monday);
             startDate.setDate(week1Monday.getDate() + (weekNumber - 1) * 7);
-            
             const endDate = new Date(startDate);
             endDate.setDate(startDate.getDate() + 6);
-
-            const options = { day: 'numeric', month: 'short' };
-            const startStr = startDate.toLocaleDateString('en-US', options);
-            const endStr = endDate.toLocaleDateString('en-US', { ...options, year: 'numeric' });
-            
-            document.getElementById('weekPeriodDisplay').textContent = `${startStr} - ${endStr}`;
+            const opts = { day: 'numeric', month: 'short' };
+            document.getElementById('weekPeriodDisplay').textContent =
+                startDate.toLocaleDateString('en-US', opts) + ' - ' + endDate.toLocaleDateString('en-US', { ...opts, year: 'numeric' });
         }
 
         function toggleDayInputs() {
@@ -248,45 +213,33 @@
             const contract = document.getElementById('filterContract').value;
             const vehicle = document.getElementById('filterVehicle').value;
             const search = document.getElementById('filterSearch').value.toLowerCase();
-
             document.querySelectorAll('.manpower-row').forEach(row => {
-                const matchContract = !contract || row.dataset.contract === contract;
-                const matchVehicle = !vehicle || row.dataset.vehicle === vehicle;
-                const matchSearch = !search || 
-                    row.dataset.nip.includes(search) || 
-                    row.dataset.name.includes(search);
-
-                row.style.display = (matchContract && matchVehicle && matchSearch) ? '' : 'none';
+                const match = (!contract || row.dataset.contract === contract) &&
+                              (!vehicle || row.dataset.vehicle === vehicle) &&
+                              (!search || row.dataset.nip.includes(search) || row.dataset.name.includes(search));
+                row.style.display = match ? '' : 'none';
             });
         }
 
         function selectAll() {
-            document.querySelectorAll('.manpower-row:not([style*="display: none"]) .manpower-check').forEach(cb => {
-                cb.checked = true;
-            });
+            document.querySelectorAll('.manpower-row:not([style*="display: none"]) .manpower-check').forEach(cb => cb.checked = true);
             updateTotal();
         }
 
         function deselectAll() {
-            document.querySelectorAll('.manpower-check').forEach(cb => {
-                cb.checked = false;
-            });
+            document.querySelectorAll('.manpower-check').forEach(cb => cb.checked = false);
             updateTotal();
         }
 
         function toggleAll(source) {
-            document.querySelectorAll('.manpower-check').forEach(cb => {
-                cb.checked = source.checked;
-            });
+            document.querySelectorAll('.manpower-check').forEach(cb => cb.checked = source.checked);
             updateTotal();
         }
 
         function updateTotal() {
-            const checked = document.querySelectorAll('.manpower-check:checked').length;
-            document.getElementById('selectedCount').textContent = checked;
+            document.getElementById('selectedCount').textContent = document.querySelectorAll('.manpower-check:checked').length;
         }
 
-        // Initialize
         toggleDayInputs();
         updateTotal();
     </script>
