@@ -52,7 +52,11 @@
                             @forelse ($productivity as $person)
                                 <tr class="border-b border-gray-100 hover:bg-gray-50">
                                     <td class="py-2 px-2">
-                                        <div class="font-medium text-gray-800">{{ $person['name'] }}</div>
+                                        @php
+                                            $nameParts = explode(' ', trim($person['name']));
+                                            $displayName = count($nameParts) >= 2 ? $nameParts[0].' '.$nameParts[1] : (strlen($person['name']) > 14 ? substr($person['name'], 0, 14).'...' : $person['name']);
+                                        @endphp
+                                        <div class="font-medium text-sm text-gray-800">{{ $displayName }}</div>
                                         <div class="text-xs text-gray-400">{{ $person['nip'] }}</div>
                                     </td>
                                     <td class="text-center py-2 px-2 font-semibold">{{ $person['daily_target'] }}</td>
@@ -123,7 +127,7 @@
                                         <span x-text="person.rank"></span>
                                     </span>
                                     <div class="min-w-0 flex-1">
-                                        <div class="font-semibold text-gray-800 truncate" x-text="person.name"></div>
+                                        <div class="font-semibold text-sm text-gray-800 leading-tight" x-text="formatName(person.name)"></div>
                                         <div class="text-[11px] text-gray-400" x-text="person.nip"></div>
                                     </div>
                                     <span class="text-xs font-medium px-2 py-1 rounded-full shrink-0"
@@ -270,6 +274,18 @@
     </div>
 
     <script>
+        function formatName(name) {
+            if (!name) return '';
+            const words = name.trim().split(/\s+/);
+            if (words.length >= 2) {
+                return words[0] + ' ' + words[1];
+            }
+            if (name.length > 14) {
+                return name.substring(0, 14) + '...';
+            }
+            return name;
+        }
+
         function mobileCards() {
             return {
                 allCards: [],
