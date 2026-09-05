@@ -619,6 +619,7 @@
                 achievements.push({
                     manpower_id: parseInt(inp.dataset.manpowerId),
                     achievement: parseInt(inp.value) || 0,
+                    date: inp.dataset.date,
                 });
             });
 

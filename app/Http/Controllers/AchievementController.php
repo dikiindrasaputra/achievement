@@ -117,13 +117,14 @@ class AchievementController extends Controller
             'achievements' => 'required|array',
             'achievements.*.manpower_id' => 'required|exists:manpower,id',
             'achievements.*.achievement' => 'required|integer|min:0',
+            'achievements.*.date' => 'required|date',
             'achievements.*.notes' => 'nullable|string|max:255',
         ]);
 
         foreach ($validated['achievements'] as $item) {
             Achievement::saveWithCarryover(
                 $item['manpower_id'],
-                $validated['date'],
+                $item['date'],
                 $item['achievement'],
                 $item['notes'] ?? null,
                 Auth::id()
