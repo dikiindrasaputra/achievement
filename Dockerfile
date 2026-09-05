@@ -23,7 +23,7 @@ COPY . .
 
 RUN npm ci && npm run build
 
-RUN composer dump-autoload --optimize
+RUN php artisan view:clear && composer dump-autoload --optimize
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
