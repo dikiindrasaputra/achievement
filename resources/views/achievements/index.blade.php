@@ -485,7 +485,7 @@
                         cb.className = `px-2 py-0.5 text-[10px] font-semibold rounded-full shrink-0 ${data.contract_type === 'dedicated' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`;
                     }
 
-                    document.getElementById(`inputManpowerId${suffix}`).value = data.manpower_id;
+                    if (document.getElementById(`inputManpowerId${suffix}`)) document.getElementById(`inputManpowerId${suffix}`).value = data.manpower_id;
                     document.getElementById(`infoNip${suffix}`).textContent = data.nip;
                     document.getElementById(`infoName${suffix}`).textContent = data.full_name;
                     if (document.getElementById(`infoContract${suffix}`)) document.getElementById(`infoContract${suffix}`).textContent = data.contract_type === 'dedicated' ? 'Dedicated' : 'Mitra';
@@ -518,12 +518,14 @@
                     return r.json();
                 })
                 .then(data => {
-                    document.getElementById(`bdDailyTarget${suffix}`).textContent = data.daily_target;
-                    document.getElementById(`bdWeeklyTarget${suffix}`).textContent = data.weekly_target;
-                    document.getElementById(`bdTotalAchievement${suffix}`).textContent = data.total_achievement;
-                    document.getElementById(`bdVerdict${suffix}`).innerHTML = data.is_above_target
-                        ? '<span class="text-green-600">✓ Above</span>'
-                        : '<span class="text-red-600">✗ Below</span>';
+                    if (document.getElementById(`bdDailyTarget${suffix}`)) {
+                        document.getElementById(`bdDailyTarget${suffix}`).textContent = data.daily_target;
+                        document.getElementById(`bdWeeklyTarget${suffix}`).textContent = data.weekly_target;
+                        document.getElementById(`bdTotalAchievement${suffix}`).textContent = data.total_achievement;
+                        document.getElementById(`bdVerdict${suffix}`).innerHTML = data.is_above_target
+                            ? '<span class="text-green-600">✓ Above</span>'
+                            : '<span class="text-red-600">✗ Below</span>';
+                    }
 
                     if (suffix === 'Mobile') return;
 
