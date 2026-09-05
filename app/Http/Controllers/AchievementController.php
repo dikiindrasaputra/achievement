@@ -102,6 +102,10 @@ class AchievementController extends Controller
             Auth::id()
         );
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Achievement berhasil disimpan.']);
+        }
+
         return redirect()->route('achievements.index', ['date' => $validated['date']])
             ->with('success', 'Achievement berhasil disimpan.');
     }

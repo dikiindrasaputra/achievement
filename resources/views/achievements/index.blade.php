@@ -167,44 +167,31 @@
                     </div>
                 </div>
 
-                {{-- Right: Input + Detail Panel --}}
+                {{-- Right: All-Day Input Panel --}}
                 <div class="col-span-2">
+                    {{-- Placeholder --}}
                     <div id="rightPanelDefault" class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                        {{-- Placeholder when nothing selected --}}
                         <div class="text-center">
                             <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
                                 <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
                             </div>
                             <p class="text-sm font-semibold text-gray-400">Pilih Manpower</p>
                             <p class="text-xs text-gray-300 mt-1">Klik baris di tabel untuk input pencapaian</p>
-
                             <div class="mt-6 space-y-3 text-left">
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
-                                    <div class="flex-1 space-y-1.5">
-                                        <div class="h-2.5 bg-gray-200 rounded w-3/4"></div>
-                                        <div class="h-2 bg-gray-100 rounded w-1/2"></div>
+                                @foreach([3,2,4] as $w)
+                                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                        <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
+                                        <div class="flex-1 space-y-1.5">
+                                            <div class="h-2.5 bg-gray-200 rounded" style="width: {{ $w * 20 }}%"></div>
+                                            <div class="h-2 bg-gray-100 rounded" style="width: {{ $w * 15 }}%"></div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
-                                    <div class="flex-1 space-y-1.5">
-                                        <div class="h-2.5 bg-gray-200 rounded w-2/3"></div>
-                                        <div class="h-2 bg-gray-100 rounded w-2/5"></div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
-                                    <div class="flex-1 space-y-1.5">
-                                        <div class="h-2.5 bg-gray-200 rounded w-1/2"></div>
-                                        <div class="h-2 bg-gray-100 rounded w-3/5"></div>
-                                    </div>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
 
-                    {{-- Selected Manpower Panel --}}
+                    {{-- Active Panel --}}
                     <div id="rightPanelActive" class="hidden bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
 
                         {{-- Whitelist Notice --}}
@@ -215,10 +202,9 @@
                             </p>
                         </div>
 
-                        {{-- Info + Input --}}
-                        <div id="manpowerInfoSection" class="p-4">
-                            {{-- Manpower header --}}
-                            <div class="flex items-center justify-between mb-3">
+                        {{-- Manpower Info --}}
+                        <div id="manpowerInfoSection" class="p-4 border-b border-gray-100">
+                            <div class="flex items-center justify-between mb-2">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
                                         <span id="infoAvatar" class="text-sm font-bold text-orange-600"></span>
@@ -230,90 +216,36 @@
                                 </div>
                                 <span id="infoContractBadge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full shrink-0"></span>
                             </div>
-
-                            {{-- Stats grid --}}
-                            <div class="grid grid-cols-3 gap-2 mb-3">
-                                <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                    <p class="text-[10px] text-gray-400">Week/Day</p>
-                                    <p id="infoWeekDay" class="text-xs font-bold text-gray-700"></p>
-                                </div>
-                                <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                    <p class="text-[10px] text-gray-400">Target</p>
-                                    <p id="infoDailyTarget" class="text-xs font-bold text-blue-600"></p>
-                                </div>
-                                <div class="bg-gray-50 rounded-lg p-2 text-center">
-                                    <p class="text-[10px] text-gray-400">Carryover</p>
-                                    <p id="infoCarryover" class="text-xs font-bold"></p>
-                                </div>
+                            {{-- Weekly summary --}}
+                            <div class="grid grid-cols-4 gap-2 mt-2">
+                                <div class="bg-blue-50 rounded-lg p-1.5 text-center"><p class="text-[9px] text-gray-400">Daily Tgt</p><p id="bdDailyTarget" class="text-xs font-bold text-blue-600"></p></div>
+                                <div class="bg-blue-50 rounded-lg p-1.5 text-center"><p class="text-[9px] text-gray-400">Weekly Tgt</p><p id="bdWeeklyTarget" class="text-xs font-bold text-blue-600"></p></div>
+                                <div class="bg-green-50 rounded-lg p-1.5 text-center"><p class="text-[9px] text-gray-400">Total Ach</p><p id="bdTotalAchievement" class="text-xs font-bold text-green-600"></p></div>
+                                <div class="bg-gray-50 rounded-lg p-1.5 text-center"><p class="text-[9px] text-gray-400">Verdict</p><p id="bdVerdict" class="text-xs font-bold"></p></div>
                             </div>
-
-                            {{-- Effective Target + Status --}}
-                            <div class="flex items-center gap-3 mb-3 p-3 bg-blue-50 rounded-lg">
-                                <div class="flex-1">
-                                    <p class="text-[10px] text-gray-400">Effective Target</p>
-                                    <p id="infoEffectiveTarget" class="text-xl font-bold text-blue-600"></p>
-                                </div>
-                                <div id="infoStatus"></div>
-                                <div class="w-20"><div id="infoProgress"></div></div>
-                            </div>
-
-                            {{-- Input Form --}}
-                            <form action="{{ route('achievements.store') }}" method="POST" id="achievementForm">
-                                @csrf
-                                <input type="hidden" name="date" value="{{ $date->format('Y-m-d') }}">
-                                <input type="hidden" name="manpower_id" id="inputManpowerId">
-                                <div class="flex gap-2 items-end">
-                                    <div class="flex-1">
-                                        <label class="block text-[10px] text-gray-400 mb-0.5">Achievement</label>
-                                        <input type="number" name="achievement" id="inputAchievement" min="0" value="0" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm text-center font-bold">
-                                    </div>
-                                    <div class="flex-1">
-                                        <label class="block text-[10px] text-gray-400 mb-0.5">Notes</label>
-                                        <input type="text" name="notes" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
-                                    </div>
-                                    <button type="submit" id="btnSave" class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition shrink-0">Simpan</button>
-                                    <button type="button" onclick="loadManpowerInfo()" class="px-3 py-2 bg-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-300 transition shrink-0">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    </button>
-                                </div>
-                            </form>
                         </div>
 
-                        {{-- Daily Breakdown --}}
-                        <div id="dailyBreakdownSection" class="hidden border-t border-gray-100">
-                            <div class="px-4 py-2 bg-gray-50 flex justify-between items-center">
-                                <span class="text-xs font-semibold text-gray-600">Detail Mingguan</span>
-                                <button onclick="document.getElementById('dailyBreakdownSection').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
+                        {{-- All Days Input Table --}}
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-semibold text-gray-600">Input Semua Hari</span>
+                                <span class="text-[10px] text-gray-400">Klik ✓ untuk simpan per hari</span>
                             </div>
-                            <div class="p-4">
-                                <div class="grid grid-cols-3 gap-2 mb-3">
-                                    <div><p class="text-[10px] text-gray-400">Daily Tgt</p><p id="bdDailyTarget" class="text-xs font-bold text-blue-600"></p></div>
-                                    <div><p class="text-[10px] text-gray-400">Weekly Tgt</p><p id="bdWeeklyTarget" class="text-xs font-bold text-blue-600"></p></div>
-                                    <div><p class="text-[10px] text-gray-400">Total Ach</p><p id="bdTotalAchievement" class="text-xs font-bold text-green-600"></p></div>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 mb-3">
-                                    <div><p class="text-[10px] text-gray-400">Hari Aktif</p><p id="bdDaysActive" class="text-xs font-bold"></p></div>
-                                    <div><p class="text-[10px] text-gray-400">Rata-rata</p><p id="bdAvgAchievement" class="text-xs font-bold"></p></div>
-                                    <div><p class="text-[10px] text-gray-400">Verdict</p><p id="bdVerdict" class="text-xs font-bold"></p></div>
-                                </div>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-[11px]">
-                                        <thead class="text-gray-400 border-b">
-                                            <tr>
-                                                <th class="py-1 text-center">Hari</th>
-                                                <th class="py-1 text-center">Tgt</th>
-                                                <th class="py-1 text-center">Carry</th>
-                                                <th class="py-1 text-center">Eff</th>
-                                                <th class="py-1 text-center">Ach</th>
-                                                <th class="py-1 text-center">%</th>
-                                                <th class="py-1 text-center">Sts</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="breakdownTableBody" class="divide-y divide-gray-50"></tbody>
-                                    </table>
-                                </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-[11px]">
+                                    <thead class="text-gray-400 border-b">
+                                        <tr>
+                                            <th class="py-1.5 text-center w-12">Hari</th>
+                                            <th class="py-1.5 text-center w-10">Tgt</th>
+                                            <th class="py-1.5 text-center w-10">Carry</th>
+                                            <th class="py-1.5 text-center w-10">Eff</th>
+                                            <th class="py-1.5 text-center">Ach</th>
+                                            <th class="py-1.5 text-center w-12">%</th>
+                                            <th class="py-1.5 text-center w-8"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allDaysTableBody" class="divide-y divide-gray-50"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -551,19 +483,21 @@
                     document.getElementById(`inputManpowerId${suffix}`).value = data.manpower_id;
                     document.getElementById(`infoNip${suffix}`).textContent = data.nip;
                     document.getElementById(`infoName${suffix}`).textContent = data.full_name;
-                    document.getElementById(`infoContract${suffix}`).textContent = data.contract_type === 'dedicated' ? 'Dedicated' : 'Mitra';
-                    document.getElementById(`infoWeekDay${suffix}`).textContent = `W${data.week_number}/D${data.day_in_week}`;
-                    document.getElementById(`infoDailyTarget${suffix}`).textContent = data.daily_target;
-                    document.getElementById(`infoCarryover${suffix}`).textContent = data.carryover;
-                    document.getElementById(`infoEffectiveTarget${suffix}`).textContent = data.effective_target;
-                    document.getElementById(`inputAchievement${suffix}`).value = data.existing_achievement;
+                    if (document.getElementById(`infoContract${suffix}`)) document.getElementById(`infoContract${suffix}`).textContent = data.contract_type === 'dedicated' ? 'Dedicated' : 'Mitra';
+                    if (document.getElementById(`infoWeekDay${suffix}`)) document.getElementById(`infoWeekDay${suffix}`).textContent = `W${data.week_number}/D${data.day_in_week}`;
+                    if (document.getElementById(`infoDailyTarget${suffix}`)) document.getElementById(`infoDailyTarget${suffix}`).textContent = data.daily_target;
+                    if (document.getElementById(`infoCarryover${suffix}`)) document.getElementById(`infoCarryover${suffix}`).textContent = data.carryover;
+                    if (document.getElementById(`infoEffectiveTarget${suffix}`)) document.getElementById(`infoEffectiveTarget${suffix}`).textContent = data.effective_target;
+                    if (document.getElementById(`inputAchievement${suffix}`)) document.getElementById(`inputAchievement${suffix}`).value = data.existing_achievement;
 
-                    const pct = data.effective_target > 0 ? (data.existing_achievement / data.effective_target) * 100 : 0;
-                    const sc = pct >= 100 ? 'bg-green-100 text-green-800' : (pct >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
-                    const st = pct >= 100 ? 'Achieved' : (pct >= 50 ? 'Partial' : 'Low');
-                    document.getElementById(`infoStatus${suffix}`).innerHTML = `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${sc}">${st} ${Math.round(pct)}%</span>`;
-                    const pc = pct >= 100 ? 'bg-green-600' : (pct >= 50 ? 'bg-yellow-600' : 'bg-red-600');
-                    document.getElementById(`infoProgress${suffix}`).innerHTML = `<div class="w-full bg-gray-200 rounded-full h-1.5 mt-1"><div class="${pc} h-1.5 rounded-full" style="width: ${Math.min(pct, 100)}%"></div></div>`;
+                    if (document.getElementById(`infoStatus${suffix}`)) {
+                        const pct = data.effective_target > 0 ? (data.existing_achievement / data.effective_target) * 100 : 0;
+                        const sc = pct >= 100 ? 'bg-green-100 text-green-800' : (pct >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
+                        const st = pct >= 100 ? 'Achieved' : (pct >= 50 ? 'Partial' : 'Low');
+                        document.getElementById(`infoStatus${suffix}`).innerHTML = `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${sc}">${st} ${Math.round(pct)}%</span>`;
+                        const pc = pct >= 100 ? 'bg-green-600' : (pct >= 50 ? 'bg-yellow-600' : 'bg-red-600');
+                        document.getElementById(`infoProgress${suffix}`).innerHTML = `<div class="w-full bg-gray-200 rounded-full h-1.5 mt-1"><div class="${pc} h-1.5 rounded-full" style="width: ${Math.min(pct, 100)}%"></div></div>`;
+                    }
 
                     loadDailyBreakdown(id, suffix);
                 })
@@ -574,28 +508,91 @@
             fetch(`${breakdownApiUrl}?manpower_id=${id}&date=${dateValue}`)
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById(`dailyBreakdownSection${suffix}`).classList.remove('hidden');
-                    document.getElementById(`breakdownName${suffix}`).textContent = `${data.nip} - ${data.full_name}`;
                     document.getElementById(`bdDailyTarget${suffix}`).textContent = data.daily_target;
                     document.getElementById(`bdWeeklyTarget${suffix}`).textContent = data.weekly_target;
                     document.getElementById(`bdTotalAchievement${suffix}`).textContent = data.total_achievement;
-                    document.getElementById(`bdDaysActive${suffix}`).textContent = `${data.days_with_achievement}/${data.days.length}`;
-                    document.getElementById(`bdAvgAchievement${suffix}`).textContent = data.avg_achievement;
                     document.getElementById(`bdVerdict${suffix}`).innerHTML = data.is_above_target
                         ? '<span class="text-green-600">✓ Above</span>'
                         : '<span class="text-red-600">✗ Below</span>';
 
-                    document.getElementById(`breakdownTableBody${suffix}`).innerHTML = data.days.map(day => {
-                        const bg = day.is_whitelisted ? 'bg-purple-50' : (day.is_today ? 'bg-blue-50' : '');
-                        const pc = day.percentage >= 100 ? 'text-green-600' : (day.percentage >= 50 ? 'text-yellow-600' : 'text-red-600');
-                        const sl = day.is_whitelisted ? '<span class="text-purple-600">WL</span>' : (day.percentage >= 100 ? '<span class="text-green-600">✓</span>' : (day.percentage > 0 ? `<span class="${pc}">${day.percentage}%</span>` : '-'));
-                        if (suffix === 'Mobile') {
-                            return `<tr class="${bg}"><td class="py-1 text-center">${day.day_name}</td><td class="py-1 text-center">${day.is_whitelisted ? 0 : day.daily_target}</td><td class="py-1 text-center font-bold">${day.achievement}</td><td class="py-1 text-center ${pc}">${day.percentage}%</td><td class="py-1 text-center">${sl}</td></tr>`;
+                    if (suffix === 'Mobile') return;
+
+                    // Desktop: render all days with editable inputs
+                    const tbody = document.getElementById('allDaysTableBody');
+                    tbody.innerHTML = data.days.map(day => {
+                        const isSelected = day.is_today;
+                        const rowBg = isSelected ? 'bg-orange-50 dark:bg-orange-900/10' : '';
+                        const carryClass = day.carryover > 0 ? 'text-red-500' : (day.carryover < 0 ? 'text-green-500' : 'text-gray-400');
+                        const carryPrefix = day.carryover > 0 ? '+' : '';
+                        const noData = day.achievement === 0 && !day.is_whitelisted;
+                        const achClass = day.achievement > 0 ? 'text-green-600 font-bold' : 'text-gray-300';
+
+                        if (day.is_whitelisted) {
+                            return `<tr class="${rowBg}"><td class="py-1.5 text-center font-medium">${day.day_name}</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center"><span class="text-purple-500 text-[10px]">WL</span></td><td class="py-1.5 text-center"><span class="text-purple-500">✓</span></td><td class="py-1.5 text-center">-</td></tr>`;
                         }
-                        return `<tr class="${bg}"><td class="py-1.5 text-center">${day.day_name}</td><td class="py-1.5 text-center">${day.is_whitelisted ? 0 : day.daily_target}</td><td class="py-1.5 text-center ${day.carryover > 0 ? 'text-red-600' : (day.carryover < 0 ? 'text-green-600' : '')}">${day.carryover}</td><td class="py-1.5 text-center font-semibold">${day.effective_target}</td><td class="py-1.5 text-center font-bold">${day.achievement}</td><td class="py-1.5 text-center ${pc}">${day.percentage}%</td><td class="py-1.5 text-center">${sl}</td></tr>`;
+
+                        return `<tr class="${rowBg}" data-day-date="${day.date}">
+                            <td class="py-1.5 text-center font-medium ${isSelected ? 'text-orange-700' : ''}">${day.day_name}${isSelected ? ' ●' : ''}</td>
+                            <td class="py-1.5 text-center text-gray-600">${day.daily_target}</td>
+                            <td class="py-1.5 text-center ${carryClass}">${carryPrefix}${day.carryover}</td>
+                            <td class="py-1.5 text-center font-semibold text-blue-600">${day.effective_target}</td>
+                            <td class="py-1.5 text-center">
+                                <input type="number" min="0" value="${day.achievement}"
+                                    class="day-ach-input w-14 text-center text-xs font-bold rounded border ${isSelected ? 'border-orange-300 focus:ring-orange-500 focus:border-orange-500' : 'border-gray-200 focus:ring-orange-500 focus:border-orange-500'} py-0.5"
+                                    data-date="${day.date}" data-manpower-id="${data.manpower_id}"
+                                    onchange="autoSaveDay(this, event)" onkeydown="autoSaveDay(this, event)">
+                            </td>
+                            <td class="py-1.5 text-center">
+                                <span class="day-pct ${day.percentage >= 100 ? 'text-green-600' : (day.percentage >= 50 ? 'text-yellow-600' : 'text-red-600')}">${day.percentage}%</span>
+                            </td>
+                            <td class="py-1.5 text-center">
+                                <button type="button" onclick="saveDayAchievement(this)" class="save-day-btn text-green-500 hover:text-green-700 transition" title="Simpan">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                </button>
+                            </td>
+                        </tr>`;
                     }).join('');
                 })
                 .catch(e => console.error(e));
+        }
+
+        function autoSaveDay(input, e) {
+            if (e && e.key === 'Enter') {
+                saveDayAchievement(input);
+            }
+        }
+
+        function saveDayAchievement(el) {
+            const row = el.closest('tr');
+            const input = row.querySelector('.day-ach-input');
+            const date = input.dataset.date;
+            const manpowerId = input.dataset.manpowerId;
+            const achievement = parseInt(input.value) || 0;
+
+            const btn = row.querySelector('.save-day-btn');
+            btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+
+            fetch('{{ route("achievements.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ manpower_id: manpowerId, date: date, achievement: achievement })
+            })
+            .then(r => r.json())
+            .then(res => {
+                btn.innerHTML = '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                loadDailyBreakdown(manpowerId);
+            })
+            .catch(e => {
+                console.error(e);
+                btn.innerHTML = '<svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+                setTimeout(() => {
+                    btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                }, 2000);
+            });
         }
 
         function hideManpowerInfo() {
