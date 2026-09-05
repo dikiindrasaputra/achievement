@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div x-data="{ showModal: false, expandedTarget: {{ $selectedTarget ? $selectedTarget->id : 'null' }} }" class="py-12">
+    <div x-data="{ showModal: false, expandedTarget: null }" class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             {{-- Header: Year picker + Create --}}
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
