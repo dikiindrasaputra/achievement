@@ -1,11 +1,6 @@
 <x-app-layout>
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Page Title -->
-            <div class="mb-6">
-                <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Dashboard</h2>
-            </div>
-
             <!-- Productivity by Delivered -->
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6 mb-8">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
@@ -111,69 +106,92 @@
                     </table>
                 </div>
 
-                {{-- Mobile: Card view --}}
-                <div class="lg:hidden space-y-3">
-                    @forelse ($productivity as $person)
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                            {{-- Header: Rank + Name + Status --}}
-                            <div class="flex items-center gap-3 mb-3">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-white shrink-0"
-                                      style="background-color: {{ $person['rank'] <= 3 ? ($person['rank'] == 1 ? '#16a34a' : ($person['rank'] == 2 ? '#22c55e' : '#4ade80')) : '#9ca3af' }};">
-                                    {{ $person['rank'] }}
-                                </span>
-                                <div class="min-w-0 flex-1">
-                                    <div class="font-semibold text-gray-800 truncate">{{ $person['name'] }}</div>
-                                    <div class="text-[11px] text-gray-400">{{ $person['nip'] }}</div>
+                {{-- Mobile: Card view with lazy load --}}
+                @php
+                    $weekDaysJson = json_encode($weekDays);
+                    $productivityJson = json_encode($productivity->values());
+                @endphp
+                <div class="lg:hidden" x-data="mobileCards()" x-init="init()">
+                    <div class="space-y-3">
+                        <template x-for="(person, idx) in visibleCards" :key="person.nip">
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                {{-- Header: Rank + Name + Status --}}
+                                <div class="flex items-center gap-3 mb-3">
+                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-white shrink-0"
+                                          :style="'background-color:' + (person.rank <= 3 ? (person.rank == 1 ? '#16a34a' : (person.rank == 2 ? '#22c55e' : '#4ade80')) : '#9ca3af')">
+                                        <span x-text="person.rank"></span>
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="font-semibold text-gray-800 truncate" x-text="person.name"></div>
+                                        <div class="text-[11px] text-gray-400" x-text="person.nip"></div>
+                                    </div>
+                                    <span class="text-xs font-medium px-2 py-1 rounded-full shrink-0"
+                                          :class="person.weekly_avg >= person.daily_target ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                          x-text="person.weekly_avg >= person.daily_target ? 'Achieved' : 'Not Achieved'">
+                                    </span>
                                 </div>
-                                <span class="text-xs font-medium px-2 py-1 rounded-full shrink-0 {{ $person['weekly_avg'] >= $person['daily_target'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                    {{ $person['weekly_avg'] >= $person['daily_target'] ? 'Achieved' : 'Not Achieved' }}
-                                </span>
-                            </div>
 
-                            {{-- Stats row --}}
-                            <div class="grid grid-cols-4 gap-2 text-center mb-3">
-                                <div>
-                                    <div class="text-[10px] text-gray-400">Daily</div>
-                                    <div class="text-xs font-bold text-gray-800">{{ $person['daily_target'] }}</div>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] text-gray-400">Weekly</div>
-                                    <div class="text-xs font-bold text-gray-800">{{ $person['weekly_target'] }}</div>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] text-gray-400">Total</div>
-                                    <div class="text-xs font-bold text-gray-800">{{ $person['total_achievement'] }}</div>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] text-gray-400">GAP</div>
-                                    <div class="text-xs font-bold {{ $person['gap'] > 0 ? 'text-red-600' : 'text-green-600' }}">
-                                        {{ $person['gap'] > 0 ? '-' . $person['gap'] : '+' . abs($person['gap']) }}
+                                {{-- Stats row --}}
+                                <div class="grid grid-cols-4 gap-2 text-center mb-3">
+                                    <div>
+                                        <div class="text-[10px] text-gray-400">Daily</div>
+                                        <div class="text-xs font-bold text-gray-800" x-text="person.daily_target"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[10px] text-gray-400">Weekly</div>
+                                        <div class="text-xs font-bold text-gray-800" x-text="person.weekly_target"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[10px] text-gray-400">Total</div>
+                                        <div class="text-xs font-bold text-gray-800" x-text="person.total_achievement"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[10px] text-gray-400">GAP</div>
+                                        <div class="text-xs font-bold"
+                                             :class="person.gap > 0 ? 'text-red-600' : 'text-green-600'"
+                                             x-text="(person.gap > 0 ? '-' : '+') + Math.abs(person.gap)"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            {{-- Day chips --}}
-                            <div class="grid grid-cols-7 gap-1">
-                                @foreach ($weekDays as $day)
-                                    @php $dayData = $person['days'][$day['day_number']] ?? null; @endphp
-                                    <div class="text-center rounded-md py-1.5 {{ $day['is_today'] ? 'border border-orange-300 bg-orange-50' : 'bg-white border border-gray-100' }}">
-                                        <div class="text-[9px] text-gray-400 leading-none">{{ $day['day_name'] }}</div>
-                                        @if ($dayData && $dayData['is_whitelisted'])
-                                            <div class="text-[10px] text-purple-400 font-medium leading-tight mt-0.5">OFF</div>
-                                        @elseif ($dayData && $dayData['achievement'] > 0)
-                                            <div class="text-[11px] text-green-600 font-bold leading-tight mt-0.5">{{ $dayData['achievement'] }}</div>
-                                        @elseif ($day['is_past'])
-                                            <div class="text-[11px] text-red-400 font-bold leading-tight mt-0.5">0</div>
-                                        @else
-                                            <div class="text-[11px] text-gray-300 leading-tight mt-0.5">-</div>
-                                        @endif
-                                    </div>
-                                @endforeach
+                                {{-- Day chips --}}
+                                <div class="grid grid-cols-7 gap-1">
+                                    <template x-for="day in weekDays" :key="day.day_number">
+                                        <div class="text-center rounded-md py-1.5"
+                                             :class="day.is_today ? 'border border-orange-300 bg-orange-50' : 'bg-white border border-gray-100'">
+                                            <div class="text-[9px] text-gray-400 leading-none" x-text="day.day_name"></div>
+                                            <template x-if="person.days[day.day_number] && person.days[day.day_number].is_whitelisted">
+                                                <div class="text-[10px] text-purple-400 font-medium leading-tight mt-0.5">OFF</div>
+                                            </template>
+                                            <template x-if="person.days[day.day_number] && !person.days[day.day_number].is_whitelisted && person.days[day.day_number].achievement > 0">
+                                                <div class="text-[11px] text-green-600 font-bold leading-tight mt-0.5" x-text="person.days[day.day_number].achievement"></div>
+                                            </template>
+                                            <template x-if="!person.days[day.day_number] && day.is_past">
+                                                <div class="text-[11px] text-red-400 font-bold leading-tight mt-0.5">0</div>
+                                            </template>
+                                            <template x-if="!person.days[day.day_number] && !day.is_past">
+                                                <div class="text-[11px] text-gray-300 leading-tight mt-0.5">-</div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
+                        </template>
+                    </div>
+
+                    {{-- Loading / sentinel --}}
+                    <div x-ref="loadMoreSentinel" x-show="hasMore" class="h-1"></div>
+                    <div x-show="loading" class="text-center py-4">
+                        <div class="inline-flex items-center gap-2 text-gray-400 text-sm">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                            Memuat...
                         </div>
-                    @empty
-                        <div class="text-center py-8 text-gray-400">Belum ada data pencapaian</div>
-                    @endforelse
+                    </div>
+                    <div x-show="!hasMore && allCards.length > 7 && !loading" class="text-center py-3 text-xs text-gray-400">
+                        Semua data ditampilkan
+                    </div>
                 </div>
             </div>
 
@@ -251,6 +269,50 @@
     </div>
 
     <script>
+        function mobileCards() {
+            return {
+                allCards: [],
+                visibleCards: [],
+                weekDays: [],
+                page: 0,
+                perPage: 7,
+                hasMore: true,
+                loading: false,
+
+                init() {
+                    this.allCards = {!! $productivityJson !!};
+                    this.weekDays = {!! $weekDaysJson !!};
+                    this.loadMore();
+
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting && this.hasMore && !this.loading) {
+                                this.loadMore();
+                            }
+                        });
+                    }, { rootMargin: '200px' });
+
+                    this.$nextTick(() => {
+                        const sentinel = this.$refs.loadMoreSentinel;
+                        if (sentinel) observer.observe(sentinel);
+                    });
+                },
+
+                loadMore() {
+                    this.loading = true;
+                    setTimeout(() => {
+                        const start = this.page * this.perPage;
+                        const end = start + this.perPage;
+                        const next = this.allCards.slice(start, end);
+                        this.visibleCards = [...this.visibleCards, ...next];
+                        this.page++;
+                        this.hasMore = end < this.allCards.length;
+                        this.loading = false;
+                    }, 300);
+                },
+            };
+        }
+
         function exportToExcel() {
             const table = document.querySelector('table');
             const weekLabel = 'Minggu {{ $weekNumber }} ({{ $weekStart->format("d M") }} - {{ $weekEnd->format("d M Y") }})';
@@ -258,13 +320,9 @@
             let html = '<html><head><meta charset="utf-8"></head><body>';
             html += '<table border="1">';
 
-            // Title row
             html += '<tr><td colspan="' + table.querySelectorAll('thead th').length + '" style="font-size:14pt;font-weight:bold;background-color:#EE4D2D;color:white;text-align:center;padding:10px;">Productivity by Delivered - ' + weekLabel + '</td></tr>';
-
-            // Empty row
             html += '<tr><td colspan="' + table.querySelectorAll('thead th').length + '"></td></tr>';
 
-            // Header row
             html += '<tr>';
             table.querySelectorAll('thead th').forEach(th => {
                 const text = th.innerText.replace(/\n/g, ' ');
@@ -272,7 +330,6 @@
             });
             html += '</tr>';
 
-            // Data rows
             table.querySelectorAll('tbody tr').forEach(tr => {
                 if (tr.querySelector('td[colspan]')) return;
                 html += '<tr>';
