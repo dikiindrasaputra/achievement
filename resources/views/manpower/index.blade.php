@@ -90,12 +90,14 @@
                         @endforelse
                     </tbody>
                 </table>
-                <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700">{{ $manpower->links() }}</div>
+                <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 text-center">
+                    Menampilkan {{ $manpower->count() }} manpower
+                </div>
             </div>
 
             {{-- Mobile: Cards with lazy load --}}
             @php
-                $manpowerJson = json_encode($manpower->getCollection()->map(fn($p) => [
+                $manpowerJson = json_encode($manpower->map(fn($p) => [
                     'id' => $p->id,
                     'nip' => $p->nip,
                     'full_name' => $p->full_name,
@@ -108,7 +110,7 @@
                     'day' => $p->getDayInWeek(),
                     'edit_url' => route('manpower.edit', $p),
                     'delete_url' => route('manpower.destroy', $p),
-                ]));
+                ])->values());
             @endphp
             <div class="lg:hidden" x-data="mobileCards()" x-init="init()">
                 <div class="space-y-3">
@@ -310,6 +312,7 @@
                 },
 
                 loadMore() {
+                    if (this.loading || !this.hasMore) return;
                     this.loading = true;
                     setTimeout(() => {
                         const start = this.page * this.perPage;

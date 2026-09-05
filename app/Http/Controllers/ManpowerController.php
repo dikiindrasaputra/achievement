@@ -19,7 +19,7 @@ class ManpowerController extends Controller
             $query->active();
         }
 
-        $manpower = $query->orderBy('nip')->paginate(20)->withQueryString();
+        $manpower = $query->orderBy('nip')->get();
 
         return view('manpower.index', compact('manpower'));
     }
