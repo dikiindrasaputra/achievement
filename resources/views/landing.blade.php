@@ -124,7 +124,7 @@
                                 </div>
                                 <p class="text-[11px] font-semibold text-gray-800 truncate">{{ $person['name'] }}</p>
                                 <p class="text-[10px] text-gray-400">{{ $person['nip'] }}</p>
-                                <p class="text-[10px] font-medium mt-1" style="color: #EE4D2D;">{{ $person['weekly_achievement'] }}/{{ $person['weekly_target'] }}</p>
+                                <p class="text-[10px] font-medium mt-1" style="color: {{ $person['weekly_avg'] >= $person['daily_target'] ? '#16a34a' : '#EE4D2D' }};">{{ $person['weekly_avg'] }}/{{ $person['daily_target'] }}</p>
                             </div>
                         </div>
                     @endforeach
@@ -165,7 +165,7 @@
                             </div>
                             <div class="min-w-0">
                                 <p class="text-xs font-medium text-gray-800 truncate">{{ $person['name'] }}</p>
-                                <p class="text-xs text-gray-400">{{ $person['weekly_achievement'] }}/{{ $person['weekly_target'] }}</p>
+                                <p class="text-xs font-medium" style="color: {{ $person['weekly_avg'] >= $person['daily_target'] ? '#16a34a' : '#EE4D2D' }};">{{ $person['weekly_avg'] }}/{{ $person['daily_target'] }}</p>
                             </div>
                         </div>
                     @empty
@@ -262,9 +262,9 @@
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="text-right hidden sm:block">
-                            <p class="text-xs text-gray-400">Target</p>
+                            <p class="text-xs text-gray-400">Rata-rata / Target</p>
                             <p class="font-bold text-sm" :class="isMet ? 'text-green-600' : 'text-gray-800'">
-                                <span x-text="totalAchieved"></span> / <span x-text="weeklyTarget"></span>
+                                <span x-text="weeklyAvg"></span> / <span x-text="dailyTarget"></span>
                             </p>
                         </div>
                         <svg class="w-5 h-5 text-gray-400 transition-transform" :class="expanded ? 'rotate-180' : ''"
@@ -278,9 +278,9 @@
                 <div x-show="expanded" x-transition class="p-4">
                     {{-- Mobile target display --}}
                     <div class="sm:hidden mb-3 text-center">
-                        <p class="text-xs text-gray-400">Pencapaian Mingguan</p>
+                        <p class="text-xs text-gray-400">Rata-rata / Target</p>
                         <p class="font-bold" :class="isMet ? 'text-green-600' : 'text-gray-800'">
-                            <span x-text="totalAchieved"></span> / <span x-text="weeklyTarget"></span>
+                            <span x-text="weeklyAvg"></span> / <span x-text="dailyTarget"></span>
                         </p>
                     </div>
 
@@ -420,11 +420,11 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium" x-text="isMet ? '✓ Target Tercapai' : '✗ Target Tidak Tercapai'"></p>
-                                <p class="text-xs mt-1" x-show="excess > 0" x-text="'Lebih ' + excess + ' dari target'"></p>
-                                <p class="text-xs mt-1" x-show="excess === 0 && !isMet" x-text="'Kurang ' + remaining + ' dari target'"></p>
+                                <p class="text-xs mt-1" x-show="!isMet && gapToTarget > 0" x-text="'Kurang ' + gapToTarget + ' paket lagi agar produktivitas terpenuhi'"></p>
+                                <p class="text-xs mt-1" x-show="isMet" x-text="'Produktivitas sudah memenuhi target'"></p>
                             </div>
                             <div class="text-right">
-                                <p class="text-lg font-bold" x-text="totalAchieved + ' / ' + weeklyTarget"></p>
+                                <p class="text-lg font-bold" x-text="weeklyAvg + ' / ' + dailyTarget"></p>
                             </div>
                         </div>
                     </div>
@@ -600,11 +600,30 @@
                 },
 
                 get isMet() {
-                    return this.totalAchieved >= this.weeklyTarget;
+                    const activeDays = this.days.filter(d => d.has_achievement && !d.is_whitelisted && d.status !== 'not_joined').length;
+                    const avg = activeDays > 0 ? Math.round(this.totalAchieved / activeDays) : 0;
+                    return this.dailyTarget > 0 ? avg >= this.dailyTarget : true;
                 },
 
                 get progressPercent() {
-                    return this.weeklyTarget > 0 ? Math.round((this.totalAchieved / this.weeklyTarget) * 100) : 0;
+                    const activeDays = this.days.filter(d => d.has_achievement && !d.is_whitelisted && d.status !== 'not_joined').length;
+                    const avg = activeDays > 0 ? Math.round(this.totalAchieved / activeDays) : 0;
+                    return this.dailyTarget > 0 ? Math.round((avg / this.dailyTarget) * 100) : 0;
+                },
+
+                get weeklyAvg() {
+                    const activeDays = this.days.filter(d => d.has_achievement && !d.is_whitelisted && d.status !== 'not_joined').length;
+                    return activeDays > 0 ? Math.round(this.totalAchieved / activeDays) : 0;
+                },
+
+                get activeDays() {
+                    return this.days.filter(d => d.has_achievement && !d.is_whitelisted && d.status !== 'not_joined').length;
+                },
+
+                get gapToTarget() {
+                    if (this.activeDays === 0 || this.dailyTarget === 0) return 0;
+                    const deficit = this.dailyTarget - this.weeklyAvg;
+                    return deficit > 0 ? Math.ceil(deficit * this.activeDays) : 0;
                 },
 
                 get sim() {

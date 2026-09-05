@@ -50,47 +50,49 @@
             </div>
 
             {{-- Desktop: Table --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden hidden lg:block">
+            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg hidden lg:block mb-6">
+                <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Week</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">NIP</th>
+                            <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider">Contract</th>
+                            <th class="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider">Week</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-3 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         @forelse ($manpower as $person)
                             <tr class="{{ !$person->is_active ? 'opacity-50' : '' }}">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900 dark:text-gray-100">{{ $person->nip }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $person->full_name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $person->vehicle_type == '2wh' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">{{ strtoupper($person->vehicle_type) }}</span>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs font-mono text-gray-900 dark:text-gray-100">{{ $person->nip }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-gray-100">{{ $person->full_name }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs text-center">
+                                    <span class="px-1.5 inline-flex text-[10px] leading-5 font-semibold rounded-full {{ $person->vehicle_type == '2wh' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800' }}">{{ strtoupper($person->vehicle_type) }}</span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $person->contract_type == 'dedicated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($person->contract_type) }}</span>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs text-center">
+                                    <span class="px-1.5 inline-flex text-[10px] leading-5 font-semibold rounded-full {{ $person->contract_type == 'dedicated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">{{ ucfirst($person->contract_type) }}</span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ $person->start_date->format('d M Y') }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">Week {{ $person->getWeekNumber() }} / Day {{ $person->getDayInWeek() }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $person->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $person->is_active ? 'Active' : 'Inactive' }}</span>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs text-gray-900 dark:text-gray-100">{{ $person->start_date->format('d M Y') }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs text-center text-gray-900 dark:text-gray-100">W{{ $person->getWeekNumber() }}/D{{ $person->getDayInWeek() }}</td>
+                                <td class="px-3 py-2 whitespace-nowrap text-xs text-center">
+                                    <span class="px-1.5 inline-flex text-[10px] leading-5 font-semibold rounded-full {{ $person->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $person->is_active ? 'Active' : 'Inactive' }}</span>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                <td class="px-3 py-2 whitespace-nowrap text-xs text-center space-x-1">
                                     <a href="{{ route('manpower.edit', $person) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
-                                    <button type="button" @click="showModal = true; modalUrl = '{{ route('manpower.destroy', $person) }}'" class="text-red-600 hover:text-red-900">Delete</button>
+                                    <button type="button" @click="showModal = true; modalUrl = '{{ route('manpower.destroy', $person) }}'" class="text-red-600 hover:text-red-900">Hapus</button>
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No manpower found.</td></tr>
+                            <tr><td colspan="8" class="px-3 py-4 text-center text-xs text-gray-500">Tidak ada data</td></tr>
                         @endforelse
                     </tbody>
                 </table>
-                <div class="px-6 py-3 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500 text-center">
+                </div>
+                <div class="px-3 py-2 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500 text-center">
                     Menampilkan {{ $manpower->count() }} manpower
                 </div>
             </div>
@@ -162,7 +164,6 @@
                 <div x-show="!hasMore && visibleCards.length < 7 && visibleCards.length > 0 && !loading" class="text-center py-3 text-xs text-gray-400">Semua data ditampilkan</div>
             </div>
         </div>
-    </div>
 
     {{-- Mobile: Detail/Edit/Delete Modal --}}
     <div x-show="showDetail" x-cloak class="fixed inset-0 z-50 overflow-y-auto lg:hidden" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
@@ -237,6 +238,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     {{-- Import Modal --}}

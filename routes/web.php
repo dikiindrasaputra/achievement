@@ -125,6 +125,7 @@ Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
         }
 
         $weeklyAvg = $activeDays > 0 ? round($totalAchievement / $activeDays) : 0;
+        $weeklyProductivity = $weeklyTarget > 0 ? round(($totalAchievement / $weeklyTarget) * 100, 1) : 0;
         $gap = $weeklyTarget - $totalAchievement;
 
         return [
@@ -137,10 +138,15 @@ Route::get('/dashboard', function (\Illuminate\Http\Request $request) {
             'days' => $days,
             'weekly_avg' => $weeklyAvg,
             'total_achievement' => $totalAchievement,
+            'weekly_productivity' => $weeklyProductivity,
             'gap' => $gap,
             'active_days' => $activeDays,
         ];
-    })->sortByDesc('total_achievement')->values();
+    })->sort(function ($a, $b) {
+        if ($b['weekly_avg'] !== $a['weekly_avg']) return $b['weekly_avg'] <=> $a['weekly_avg'];
+        if ($b['total_achievement'] !== $a['total_achievement']) return $b['total_achievement'] <=> $a['total_achievement'];
+        return $a['name'] <=> $b['name'];
+    })->values();
 
     $productivity = $productivity->map(function ($item, $idx) {
         $item['rank'] = $idx + 1;

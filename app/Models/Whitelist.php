@@ -33,6 +33,7 @@ class Whitelist extends Model
 
     /**
      * Check if whitelist is available for manpower in current week
+     * Only "Libur" counts toward quota (1 for dedicated, 3 for mitra)
      */
     public static function isAvailable($manpowerId, $date = null): bool
     {
@@ -45,6 +46,7 @@ class Whitelist extends Model
 
         $whitelistCount = self::where('manpower_id', $manpowerId)
             ->whereBetween('date', [$weekStart, $weekEnd])
+            ->where('reason', 'Libur')
             ->count();
 
         if ($manpower->contract_type === 'dedicated') {
@@ -56,6 +58,7 @@ class Whitelist extends Model
 
     /**
      * Get remaining whitelist quota for current week
+     * Only "Libur" counts toward quota
      */
     public static function getRemainingQuota($manpowerId, $date = null): int
     {
@@ -68,6 +71,7 @@ class Whitelist extends Model
 
         $whitelistCount = self::where('manpower_id', $manpowerId)
             ->whereBetween('date', [$weekStart, $weekEnd])
+            ->where('reason', 'Libur')
             ->count();
 
         if ($manpower->contract_type === 'dedicated') {

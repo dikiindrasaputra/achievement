@@ -47,16 +47,18 @@ class TargetItem extends Model
     /**
      * Get target for specific day
      */
-    public function getDayTarget(int $day): int
+    public function getDayTarget(int $day): ?int
     {
-        return match($day) {
+        $value = match($day) {
             1 => $this->day_1,
             2 => $this->day_2,
             3 => $this->day_3,
             4 => $this->day_4,
             5 => $this->day_5,
             6 => $this->day_6,
-            default => 0,
+            default => null,
         };
+
+        return $value > 0 ? $value : null;
     }
 }

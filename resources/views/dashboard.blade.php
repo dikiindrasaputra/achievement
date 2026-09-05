@@ -69,7 +69,7 @@
                                         {{ $day['day_name'] }}<br><span class="text-[10px]">{{ $day['date_display'] }}</span>
                                     </th>
                                 @endforeach
-                                <th class="text-center py-2 px-2">Avg/Day</th>
+                                <th class="text-center py-2 px-2">Productivity</th>
                                 <th class="text-center py-2 px-2">Total</th>
                                 <th class="text-center py-2 px-2">GAP</th>
                                 <th class="text-center py-2 px-2">Status</th>
@@ -188,10 +188,10 @@
                                         <div class="text-xs font-bold text-gray-800" x-text="person.total_achievement"></div>
                                     </div>
                                     <div>
-                                        <div class="text-[10px] text-gray-400">GAP</div>
+                                        <div class="text-[10px] text-gray-400">Productivity</div>
                                         <div class="text-xs font-bold"
-                                             :class="person.gap > 0 ? 'text-red-600' : 'text-green-600'"
-                                             x-text="(person.gap > 0 ? '-' : '+') + Math.abs(person.gap)"></div>
+                                             :class="person.weekly_productivity >= 100 ? 'text-green-600' : 'text-red-600'"
+                                             x-text="person.weekly_productivity + '%'"></div>
                                     </div>
                                 </div>
 

@@ -45,6 +45,7 @@ class LandingPageController extends Controller
 
         $days = [];
         $totalAchievement = 0;
+        $activeDays = 0;
         $carryover = 0;
 
         foreach ($weekDays as $day) {
@@ -88,6 +89,7 @@ class LandingPageController extends Controller
 
             if ($hasAchievement) {
                 $totalAchievement += $achievementValue;
+                $activeDays++;
                 $carryover = $effectiveTarget - $achievementValue;
             }
 
@@ -124,6 +126,7 @@ class LandingPageController extends Controller
         if (!$hasPastWhitelist && $currentDayNeedsInput) $remainingDays = max(1, $remainingDays);
 
         $weeklyTargetConst = $targetItem->weekly_target;
+        $weeklyAvg = $activeDays > 0 ? round($totalAchievement / $activeDays) : 0;
 
         return [
             'id' => $person->id,
@@ -134,7 +137,8 @@ class LandingPageController extends Controller
             'daily_target' => $dailyTarget,
             'weekly_target' => $weeklyTargetConst,
             'weekly_achievement' => $totalAchievement,
-            'is_target_met' => $weeklyTargetConst > 0 ? $totalAchievement >= $weeklyTargetConst : true,
+            'weekly_avg' => $weeklyAvg,
+            'is_target_met' => $dailyTarget > 0 ? $weeklyAvg >= $dailyTarget : true,
             'days' => $days,
             'last_carryover' => $carryover,
         ];
@@ -215,8 +219,17 @@ class LandingPageController extends Controller
                 'nip' => $person->nip,
                 'weekly_achievement' => $person->achievements->sum('achievement'),
                 'weekly_target' => $person->targets->first()->weekly_target ?? 0,
+                'daily_target' => $person->targets->first()->daily_target ?? 0,
+                'active_days' => $person->achievements->count(),
+                'weekly_avg' => $person->achievements->count() > 0
+                    ? round($person->achievements->sum('achievement') / $person->achievements->count())
+                    : 0,
             ])
-            ->sortByDesc('weekly_achievement')
+            ->sort(function ($a, $b) {
+                if ($b['weekly_avg'] !== $a['weekly_avg']) return $b['weekly_avg'] <=> $a['weekly_avg'];
+                if ($b['weekly_achievement'] !== $a['weekly_achievement']) return $b['weekly_achievement'] <=> $a['weekly_achievement'];
+                return $a['name'] <=> $b['name'];
+            })
             ->take(5)
             ->values();
 
