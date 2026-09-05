@@ -12,13 +12,35 @@
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .scroll-snap-x { scroll-snap-type: x mandatory; }
+        .scroll-snap-center { scroll-snap-align: center; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     {{-- Header --}}
     <div class="bg-white border-b sticky top-0 z-30" style="border-color: #EE4D2D;">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div class="flex items-center justify-between">
+            {{-- Mobile Header --}}
+            <div class="lg:hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-2xl font-bold block" style="color: #EE4D2D;">SPX</span>
+                        <span class="text-xs text-gray-500">Achievement Tracker</span>
+                    </div>
+                    <div class="text-right">
+                        <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors" style="background-color: #EE4D2D;">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                            Login
+                        </a>
+                        <p class="text-[10px] text-gray-400 mt-1">Minggu {{ $weekNumber }} &middot; {{ $weekStart->format('d M') }} - {{ $weekEnd->format('d M Y') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Desktop Header --}}
+            <div class="hidden lg:flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl font-bold" style="color: #EE4D2D;">SPX</span>
                     <span class="text-gray-500">|</span>
@@ -38,9 +60,33 @@
         </div>
     </div>
 
-    {{-- Week Days Legend --}}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-            <div class="bg-white rounded-lg shadow-sm p-4">
+    {{-- Week Days --}}
+    {{-- Mobile: horizontal slider, 3 visible, today centered --}}
+    <div class="lg:hidden mt-4">
+        @php
+            $todayIndex = collect($weekDays)->search(fn($d) => $d['is_today']);
+            $startIdx = max(0, min($todayIndex - 1, count($weekDays) - 3));
+            $visibleDays = collect($weekDays)->slice($startIdx, 3);
+        @endphp
+        <div class="px-4">
+            <div class="flex gap-2 justify-center">
+                @foreach ($visibleDays as $day)
+                    <div class="flex-1 text-center px-2 py-3 rounded-lg {{ $day['is_today'] ? 'border-2 font-bold' : 'border border-gray-200' }}"
+                         style="{{ $day['is_today'] ? 'border-color: #EE4D2D; background-color: #FFF5F2;' : '' }}">
+                        <div class="text-[10px] text-gray-400">{{ $day['day_name'] }}</div>
+                        <div class="text-xs {{ $day['is_today'] ? 'font-bold' : 'font-medium' }}" style="{{ $day['is_today'] ? 'color: #EE4D2D;' : '' }}">
+                            Day {{ $day['day_number'] }}
+                        </div>
+                        <div class="text-[10px] text-gray-400">{{ $day['date_display'] }}</div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+
+    {{-- Desktop: all 7 days in a row --}}
+    <div class="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div class="bg-white rounded-lg shadow-sm p-4">
             <div class="flex gap-2 justify-center">
                 @foreach ($weekDays as $day)
                     <div class="flex-1 text-center px-2 py-2 rounded-lg {{ $day['is_today'] ? 'border-2 font-bold' : 'border border-gray-200' }}"
@@ -56,8 +102,46 @@
         </div>
     </div>
 
-    {{-- Week Info & Top Achievers --}}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    {{-- Top 5 Achievers --}}
+    {{-- Mobile: slider cards with profile icon --}}
+    <div class="lg:hidden mt-4">
+        <div class="max-w-7xl mx-auto px-4">
+            <p class="text-xs text-gray-400 mb-2 font-medium">Top Achievement</p>
+            @if ($topAchievers->isNotEmpty())
+                <div class="flex gap-3 overflow-x-auto hide-scrollbar scroll-snap-x pb-2 -mx-4 px-4">
+                    @foreach ($topAchievers as $idx => $person)
+                        @php
+                            $rank = $idx + 1;
+                            $isCenter = $idx === 0;
+                        @endphp
+                        <div class="flex-shrink-0 w-28 scroll-snap-center">
+                            <div class="bg-white rounded-xl shadow-sm p-3 text-center {{ $isCenter ? 'border-2' : 'border border-gray-100' }}"
+                                 style="{{ $isCenter ? 'border-color: #16a34a;' : '' }}">
+                                {{-- Rank badge --}}
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold mx-auto mb-2"
+                                     style="background-color: {{ $rank === 1 ? '#16a34a' : ($rank === 2 ? '#22c55e' : ($rank === 3 ? '#4ade80' : '#9ca3af')) }};">
+                                    {{ $rank }}
+                                </div>
+                                {{-- Profile icon --}}
+                                <div class="w-14 h-14 rounded-full mx-auto mb-2 flex items-center justify-center text-white text-xl font-bold"
+                                     style="background-color: {{ $rank === 1 ? '#16a34a' : ($rank === 2 ? '#22c55e' : ($rank === 3 ? '#4ade80' : '#EE4D2D')) }};">
+                                    {{ strtoupper(substr($person['name'], 0, 1)) }}
+                                </div>
+                                <p class="text-[11px] font-semibold text-gray-800 truncate">{{ $person['name'] }}</p>
+                                <p class="text-[10px] text-gray-400">{{ $person['nip'] }}</p>
+                                <p class="text-[10px] font-medium mt-1" style="color: #EE4D2D;">{{ $person['weekly_achievement'] }}/{{ $person['weekly_target'] }}</p>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-xs text-gray-400">Belum ada pencapaian</p>
+            @endif
+        </div>
+    </div>
+
+    {{-- Desktop: Week Info & Top Achievers --}}
+    <div class="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {{-- Week Info --}}
             <div class="bg-white rounded-lg shadow-sm p-4">
@@ -104,7 +188,32 @@
          x-init="init()">
         {{-- Search & Filter Bar --}}
         <div class="bg-white rounded-lg shadow-sm p-4 mb-4">
-            <div class="flex flex-col sm:flex-row gap-3">
+            {{-- Mobile: search bar + 2 dropdowns in 1 row --}}
+            <div class="lg:hidden">
+                <div class="relative mb-3">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" x-model="search" @input.debounce.400ms="doSearch()" placeholder="Cari nama atau NIP..."
+                           class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
+                </div>
+                <div class="flex gap-2">
+                    <select x-model="contractFilter" @change="doSearch()"
+                            class="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
+                        <option value="all">Kontrak</option>
+                        <option value="dedicated">Dedicated</option>
+                        <option value="mitra">Mitra</option>
+                    </select>
+                    <select x-model="vehicleFilter" @change="doSearch()"
+                            class="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-300">
+                        <option value="all">Kendaraan</option>
+                        <option value="2wh">2 Wheel</option>
+                        <option value="4wh">4 Wheel</option>
+                    </select>
+                </div>
+            </div>
+            {{-- Desktop: search + 2 dropdowns in 1 row --}}
+            <div class="hidden lg:flex gap-3">
                 <div class="flex-1 relative">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
