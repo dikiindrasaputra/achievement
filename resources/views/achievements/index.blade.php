@@ -229,7 +229,6 @@
                         <div class="p-4">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-xs font-semibold text-gray-600">Input Semua Hari</span>
-                                <span class="text-[10px] text-gray-400">Klik ✓ untuk simpan per hari</span>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-[11px]">
@@ -241,12 +240,13 @@
                                             <th class="py-1.5 text-center w-10">Eff</th>
                                             <th class="py-1.5 text-center">Ach</th>
                                             <th class="py-1.5 text-center w-12">%</th>
-                                            <th class="py-1.5 text-center w-8"></th>
                                         </tr>
                                     </thead>
                                     <tbody id="allDaysTableBody" class="divide-y divide-gray-50"></tbody>
                                 </table>
                             </div>
+                            <p class="text-[10px] text-gray-400 text-center mt-2 italic">Hanya simulasi perhitungan, klik simpan jika ingin menerapkan</p>
+                            <button type="button" onclick="saveAllDays()" id="btnSaveAll" class="mt-2 w-full px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50" disabled>Simpan</button>
                         </div>
                     </div>
                 </div>
@@ -552,18 +552,13 @@
                                 <div class="flex flex-col items-center">
                                     <input type="number" min="0" value="${day.achievement}"
                                         class="day-ach-input w-14 text-center text-xs font-bold rounded border ${isSelected ? 'border-orange-300 focus:ring-orange-500 focus:border-orange-500' : 'border-gray-200 focus:ring-orange-500 focus:border-orange-500'} py-0.5"
-                                        data-date="${day.date}" data-manpower-id="${data.manpower_id}"
-                                        onchange="autoSaveDay(this, event)" onkeydown="autoSaveDay(this, event)">
+                                        data-date="${day.date}" data-manpower-id="${data.manpower_id}" data-original="${day.achievement}"
+                                        oninput="checkDirty()">
                                     ${day.achievement === 0 && !day.is_whitelisted ? `<span class="text-[9px] text-orange-400 mt-0.5">rekom: ${day.effective_target}</span>` : ''}
                                 </div>
                             </td>
                             <td class="py-1.5 text-center">
                                 <span class="day-pct ${day.percentage >= 100 ? 'text-green-600' : (day.percentage >= 50 ? 'text-yellow-600' : 'text-red-600')}">${day.percentage}%</span>
-                            </td>
-                            <td class="py-1.5 text-center">
-                                <button type="button" onclick="saveDayAchievement(this)" class="save-day-btn text-green-500 hover:text-green-700 transition" title="Simpan">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                </button>
                             </td>
                         </tr>`;
                     }).join('');
@@ -571,41 +566,60 @@
                 .catch(e => console.error(e));
         }
 
-        function autoSaveDay(input, e) {
-            if (e && e.key === 'Enter') {
-                saveDayAchievement(input);
-            }
+        function checkDirty() {
+            const inputs = document.querySelectorAll('.day-ach-input');
+            let dirty = false;
+            inputs.forEach(inp => {
+                if ((parseInt(inp.value) || 0) !== (parseInt(inp.dataset.original) || 0)) dirty = true;
+            });
+            document.getElementById('btnSaveAll').disabled = !dirty;
         }
 
-        function saveDayAchievement(el) {
-            const row = el.closest('tr');
-            const input = row.querySelector('.day-ach-input');
-            const date = input.dataset.date;
-            const manpowerId = input.dataset.manpowerId;
-            const achievement = parseInt(input.value) || 0;
+        function saveAllDays() {
+            const btn = document.getElementById('btnSaveAll');
+            const inputs = document.querySelectorAll('.day-ach-input');
+            if (!inputs.length) return;
 
-            const btn = row.querySelector('.save-day-btn');
-            btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+            const manpowerId = inputs[0].dataset.manpowerId;
+            const date = inputs[0].dataset.date;
+            const achievements = [];
+            inputs.forEach(inp => {
+                achievements.push({
+                    manpower_id: parseInt(inp.dataset.manpowerId),
+                    achievement: parseInt(inp.value) || 0,
+                });
+            });
 
-            fetch('{{ route("achievements.store") }}', {
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+
+            fetch('{{ route("achievements.bulk-store") }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ manpower_id: manpowerId, date: date, achievement: achievement })
+                body: JSON.stringify({ date: date, achievements: achievements })
             })
             .then(r => r.json())
             .then(res => {
-                btn.innerHTML = '<svg class="w-3.5 h-3.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                btn.textContent = 'Tersimpan ✓';
+                btn.classList.replace('bg-blue-600', 'bg-green-600');
                 loadDailyBreakdown(manpowerId);
+                setTimeout(() => {
+                    btn.textContent = 'Simpan';
+                    btn.classList.replace('bg-green-600', 'bg-blue-600');
+                }, 2000);
             })
             .catch(e => {
                 console.error(e);
-                btn.innerHTML = '<svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+                btn.textContent = 'Gagal!';
+                btn.classList.replace('bg-blue-600', 'bg-red-600');
+                btn.disabled = false;
                 setTimeout(() => {
-                    btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
+                    btn.textContent = 'Simpan';
+                    btn.classList.replace('bg-red-600', 'bg-blue-600');
                 }, 2000);
             });
         }

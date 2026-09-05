@@ -130,6 +130,10 @@ class AchievementController extends Controller
             );
         }
 
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => count($validated['achievements']) . ' achievements berhasil disimpan.']);
+        }
+
         return redirect()->route('achievements.index', ['date' => $validated['date']])
             ->with('success', count($validated['achievements']) . ' achievements berhasil disimpan.');
     }
