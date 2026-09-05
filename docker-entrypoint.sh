@@ -1,22 +1,19 @@
 #!/bin/sh
 set -e
 
-# Generate .env from Railway env vars if not exists
-if [ ! -f /var/www/html/.env ]; then
-    cp /var/www/html/.env.example /var/www/html/.env 2>/dev/null || touch /var/www/html/.env
+# Remove old .env if exists, regenerate from Railway env vars
+rm -f /var/www/html/.env
+touch /var/www/html/.env
+
+# Build .env from Railway environment variables
+printenv | grep -E "^(APP_|DB_|SESSION_|CACHE_|QUEUE_|LOG_|MAIL_|REDIS_|BCRYPT_|BROADCAST_|FILESYSTEM_|GOOGLE_)" | sed 's/^/export /' >> /var/www/html/.env
+
+# Set default APP_URL if not provided
+if ! grep -q "APP_URL" /var/www/html/.env; then
+    echo "APP_URL=https://${RAILWAY_PUBLIC_DOMAIN}" >> /var/www/html/.env
 fi
 
-# Set APP_URL if not provided (Railway dynamic domain)
-if [ -z "$APP_URL" ]; then
-    export APP_URL="https://${RAILWAY_PUBLIC_DOMAIN}"
-    echo "APP_URL=$APP_URL" >> /var/www/html/.env
-fi
-
-# Set APP_KEY if empty
-if ! grep -q "APP_KEY=" /var/www/html/.env || [ -z "$(grep 'APP_KEY=' /var/www/html/.env | cut -d'=' -f2)" ]; then
-    php artisan key:generate --force
-fi
-
+php artisan config:clear
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
