@@ -25,7 +25,6 @@
                 </div>
 
                 @if ($weekDays)
-                    {{-- Week Navigation --}}
                     <div class="flex items-center justify-between mb-3">
                         <a href="{{ route('achievements.index', array_merge(request()->query(), ['date' => $prevWeekDate])) }}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition">
                             <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -36,7 +35,6 @@
                         </a>
                     </div>
 
-                    {{-- Day Slider --}}
                     <div class="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1" id="daySlider">
                         @foreach ($weekDays as $day)
                             <a href="{{ route('achievements.index', array_merge(request()->query(), ['date' => $day['date']])) }}"
@@ -96,231 +94,363 @@
                 </div>
             </div>
 
-            {{-- Input Achievement --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4 mb-4">
-                <h3 class="text-sm font-semibold mb-3 text-gray-700">Input Pencapaian</h3>
+            {{-- ============ DESKTOP: Two Column Layout ============ --}}
+            <div class="hidden lg:grid lg:grid-cols-5 lg:gap-4">
 
-                {{-- Manpower Picker --}}
-                <div class="flex gap-2 mb-3">
-                    <select id="manpowerPicker" onchange="loadManpowerInfo()" class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
-                        <option value="">-- Pilih Manpower --</option>
-                        @foreach ($manpower as $person)
-                            <option value="{{ $person->id }}"
-                                data-nip="{{ $person->nip }}"
-                                data-name="{{ $person->full_name }}"
-                                data-contract="{{ $person->contract_type }}">
-                                {{ $person->nip }} - {{ $person->full_name }} ({{ ucfirst($person->contract_type) }})
-                            </option>
-                        @endforeach
-                    </select>
-                    <button type="button" onclick="document.getElementById('manpowerPicker').value = ''; hideManpowerInfo();" class="px-3 py-2 bg-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-300 transition shrink-0">Reset</button>
+                {{-- Left: Status Manpower --}}
+                <div class="col-span-3 bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold">Status Manpower</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr class="text-[11px] text-gray-500">
+                                    <th class="px-3 py-2 text-left">NIP</th>
+                                    <th class="px-3 py-2 text-left">Name</th>
+                                    <th class="px-3 py-2 text-center">W/D</th>
+                                    <th class="px-3 py-2 text-center">Target</th>
+                                    <th class="px-3 py-2 text-center">Carry</th>
+                                    <th class="px-3 py-2 text-center">Eff</th>
+                                    <th class="px-3 py-2 text-center">Ach</th>
+                                    <th class="px-3 py-2 text-center">%</th>
+                                    <th class="px-3 py-2 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                @forelse ($manpower as $person)
+                                    @php
+                                        $existingAchievement = $person->achievements->first();
+                                        $isWhitelisted = $person->whitelists->isNotEmpty();
+                                        $dailyTarget = $person->getActiveDailyTarget($date);
+                                        $carryover = $person->getExpectedCarryover($date);
+                                        $effectiveTarget = $isWhitelisted ? 0 : ($dailyTarget + $carryover);
+                                        $achievementValue = $existingAchievement->achievement ?? 0;
+                                        $percentage = $effectiveTarget > 0 ? ($achievementValue / $effectiveTarget) * 100 : ($isWhitelisted ? 100 : 0);
+                                        $status = $isWhitelisted ? 'whitelisted' : ($percentage >= 100 ? 'achieved' : ($percentage >= 50 ? 'partial' : 'low'));
+                                    @endphp
+                                    <tr class="manpower-row {{ $isWhitelisted ? 'bg-purple-50 dark:bg-purple-900' : '' }} hover:bg-orange-50 cursor-pointer transition-colors"
+                                        onclick="selectManpower({{ $person->id }})"
+                                        data-manpower-id="{{ $person->id }}">
+                                        <td class="px-3 py-2 font-mono text-xs">{{ $person->nip }}</td>
+                                        <td class="px-3 py-2 text-xs font-medium">{{ $person->full_name }}</td>
+                                        <td class="px-3 py-2 text-xs text-center">{{ $person->getWeekNumber($date) }}/{{ $person->getDayInWeek($date) }}</td>
+                                        <td class="px-3 py-2 text-xs text-center font-semibold">{{ $dailyTarget }}</td>
+                                        <td class="px-3 py-2 text-xs text-center font-semibold {{ $carryover > 0 ? 'text-red-600' : ($carryover < 0 ? 'text-green-600' : 'text-gray-500') }}">{{ $carryover > 0 ? '+' : '' }}{{ $carryover }}</td>
+                                        <td class="px-3 py-2 text-xs text-center font-semibold text-blue-600">
+                                            @if ($isWhitelisted) WL @else {{ $effectiveTarget }} @endif
+                                        </td>
+                                        <td class="px-3 py-2 text-xs text-center font-bold {{ $achievementValue > 0 ? 'text-green-600' : 'text-gray-400' }}">{{ $achievementValue }}</td>
+                                        <td class="px-3 py-2 text-center">
+                                            @if ($isWhitelisted)
+                                                <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-purple-100 text-purple-700">WL</span>
+                                            @else
+                                                <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full {{ $status == 'achieved' ? 'bg-green-100 text-green-700' : ($status == 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">{{ number_format($percentage, 0) }}%</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-3 py-2">
+                                            @if (!$isWhitelisted && $effectiveTarget > 0)
+                                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                                    <div class="{{ $percentage >= 100 ? 'bg-green-500' : ($percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} h-1.5 rounded-full" style="width: {{ min($percentage, 100) }}%"></div>
+                                                </div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="9" class="px-4 py-6 text-center text-xs text-gray-400">No manpower found.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+                        {{ $manpower->links() }}
+                    </div>
                 </div>
 
-                {{-- Manpower Info --}}
-                <div id="manpowerInfoSection" class="hidden">
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-3">
-                        <div class="grid grid-cols-3 gap-2 mb-2">
-                            <div><p class="text-[10px] text-gray-400">NIP</p><p id="infoNip" class="font-mono text-xs font-semibold"></p></div>
-                            <div><p class="text-[10px] text-gray-400">Nama</p><p id="infoName" class="text-xs font-semibold truncate"></p></div>
-                            <div><p class="text-[10px] text-gray-400">Contract</p><p id="infoContract" class="text-xs font-semibold"></p></div>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 mb-2">
-                            <div><p class="text-[10px] text-gray-400">Week/Day</p><p id="infoWeekDay" class="text-xs font-semibold"></p></div>
-                            <div><p class="text-[10px] text-gray-400">Daily Target</p><p id="infoDailyTarget" class="text-xs font-bold text-blue-600"></p></div>
-                            <div><p class="text-[10px] text-gray-400">Carryover</p><p id="infoCarryover" class="text-xs font-semibold"></p></div>
-                        </div>
-                        <div class="pt-2 border-t border-gray-200 dark:border-gray-600 grid grid-cols-3 gap-2">
-                            <div><p class="text-[10px] text-gray-400">Effective Target</p><p id="infoEffectiveTarget" class="text-sm font-bold text-blue-600"></p></div>
-                            <div><p class="text-[10px] text-gray-400">Status</p><div id="infoStatus"></div></div>
-                            <div><p class="text-[10px] text-gray-400">Progress</p><div id="infoProgress"></div></div>
+                {{-- Right: Input + Detail Panel --}}
+                <div class="col-span-2">
+                    <div id="rightPanelDefault" class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                        {{-- Placeholder when nothing selected --}}
+                        <div class="text-center">
+                            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gray-100 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+                            </div>
+                            <p class="text-sm font-semibold text-gray-400">Pilih Manpower</p>
+                            <p class="text-xs text-gray-300 mt-1">Klik baris di tabel untuk input pencapaian</p>
+
+                            <div class="mt-6 space-y-3 text-left">
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
+                                    <div class="flex-1 space-y-1.5">
+                                        <div class="h-2.5 bg-gray-200 rounded w-3/4"></div>
+                                        <div class="h-2 bg-gray-100 rounded w-1/2"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
+                                    <div class="flex-1 space-y-1.5">
+                                        <div class="h-2.5 bg-gray-200 rounded w-2/3"></div>
+                                        <div class="h-2 bg-gray-100 rounded w-2/5"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="w-8 h-8 rounded-lg bg-gray-200 shrink-0"></div>
+                                    <div class="flex-1 space-y-1.5">
+                                        <div class="h-2.5 bg-gray-200 rounded w-1/2"></div>
+                                        <div class="h-2 bg-gray-100 rounded w-3/5"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {{-- Input Form --}}
-                    <form action="{{ route('achievements.store') }}" method="POST" id="achievementForm">
-                        @csrf
-                        <input type="hidden" name="date" value="{{ $date->format('Y-m-d') }}">
-                        <input type="hidden" name="manpower_id" id="inputManpowerId">
-                        <div class="flex gap-2 items-end">
-                            <div class="flex-1">
-                                <label class="block text-[10px] text-gray-400 mb-0.5">Achievement</label>
-                                <input type="number" name="achievement" id="inputAchievement" min="0" value="0" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm text-center font-bold">
-                            </div>
-                            <div class="flex-1">
-                                <label class="block text-[10px] text-gray-400 mb-0.5">Notes</label>
-                                <input type="text" name="notes" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
-                            </div>
-                            <button type="submit" id="btnSave" class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition shrink-0">Simpan</button>
-                            <button type="button" onclick="loadManpowerInfo()" class="px-4 py-2 bg-gray-500 text-white text-xs font-medium rounded-lg hover:bg-gray-600 transition shrink-0">Refresh</button>
-                        </div>
-                    </form>
-                </div>
+                    {{-- Selected Manpower Panel --}}
+                    <div id="rightPanelActive" class="hidden bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
 
-                {{-- Whitelist Notice --}}
-                <div id="whitelistNotice" class="hidden bg-purple-50 dark:bg-purple-900 border border-purple-200 dark:border-purple-700 rounded-lg p-3 text-center">
-                    <p class="text-purple-700 dark:text-purple-300 text-xs font-semibold">
-                        <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                        Manpower di-whitelist hari ini. Target = 0.
-                    </p>
+                        {{-- Whitelist Notice --}}
+                        <div id="whitelistNotice" class="hidden p-4 bg-purple-50 border-b border-purple-200 text-center">
+                            <p class="text-purple-700 text-xs font-semibold">
+                                <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Manpower di-whitelist hari ini. Target = 0.
+                            </p>
+                        </div>
+
+                        {{-- Info + Input --}}
+                        <div id="manpowerInfoSection" class="p-4">
+                            {{-- Manpower header --}}
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <div class="w-9 h-9 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                                        <span id="infoAvatar" class="text-sm font-bold text-orange-600"></span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p id="infoName" class="text-sm font-bold text-gray-800 truncate"></p>
+                                        <p id="infoNip" class="text-[10px] font-mono text-gray-400"></p>
+                                    </div>
+                                </div>
+                                <span id="infoContractBadge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full shrink-0"></span>
+                            </div>
+
+                            {{-- Stats grid --}}
+                            <div class="grid grid-cols-3 gap-2 mb-3">
+                                <div class="bg-gray-50 rounded-lg p-2 text-center">
+                                    <p class="text-[10px] text-gray-400">Week/Day</p>
+                                    <p id="infoWeekDay" class="text-xs font-bold text-gray-700"></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-2 text-center">
+                                    <p class="text-[10px] text-gray-400">Target</p>
+                                    <p id="infoDailyTarget" class="text-xs font-bold text-blue-600"></p>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-2 text-center">
+                                    <p class="text-[10px] text-gray-400">Carryover</p>
+                                    <p id="infoCarryover" class="text-xs font-bold"></p>
+                                </div>
+                            </div>
+
+                            {{-- Effective Target + Status --}}
+                            <div class="flex items-center gap-3 mb-3 p-3 bg-blue-50 rounded-lg">
+                                <div class="flex-1">
+                                    <p class="text-[10px] text-gray-400">Effective Target</p>
+                                    <p id="infoEffectiveTarget" class="text-xl font-bold text-blue-600"></p>
+                                </div>
+                                <div id="infoStatus"></div>
+                                <div class="w-20"><div id="infoProgress"></div></div>
+                            </div>
+
+                            {{-- Input Form --}}
+                            <form action="{{ route('achievements.store') }}" method="POST" id="achievementForm">
+                                @csrf
+                                <input type="hidden" name="date" value="{{ $date->format('Y-m-d') }}">
+                                <input type="hidden" name="manpower_id" id="inputManpowerId">
+                                <div class="flex gap-2 items-end">
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] text-gray-400 mb-0.5">Achievement</label>
+                                        <input type="number" name="achievement" id="inputAchievement" min="0" value="0" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm text-center font-bold">
+                                    </div>
+                                    <div class="flex-1">
+                                        <label class="block text-[10px] text-gray-400 mb-0.5">Notes</label>
+                                        <input type="text" name="notes" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
+                                    </div>
+                                    <button type="submit" id="btnSave" class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition shrink-0">Simpan</button>
+                                    <button type="button" onclick="loadManpowerInfo()" class="px-3 py-2 bg-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-300 transition shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        {{-- Daily Breakdown --}}
+                        <div id="dailyBreakdownSection" class="hidden border-t border-gray-100">
+                            <div class="px-4 py-2 bg-gray-50 flex justify-between items-center">
+                                <span class="text-xs font-semibold text-gray-600">Detail Mingguan</span>
+                                <button onclick="document.getElementById('dailyBreakdownSection').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div class="p-4">
+                                <div class="grid grid-cols-3 gap-2 mb-3">
+                                    <div><p class="text-[10px] text-gray-400">Daily Tgt</p><p id="bdDailyTarget" class="text-xs font-bold text-blue-600"></p></div>
+                                    <div><p class="text-[10px] text-gray-400">Weekly Tgt</p><p id="bdWeeklyTarget" class="text-xs font-bold text-blue-600"></p></div>
+                                    <div><p class="text-[10px] text-gray-400">Total Ach</p><p id="bdTotalAchievement" class="text-xs font-bold text-green-600"></p></div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 mb-3">
+                                    <div><p class="text-[10px] text-gray-400">Hari Aktif</p><p id="bdDaysActive" class="text-xs font-bold"></p></div>
+                                    <div><p class="text-[10px] text-gray-400">Rata-rata</p><p id="bdAvgAchievement" class="text-xs font-bold"></p></div>
+                                    <div><p class="text-[10px] text-gray-400">Verdict</p><p id="bdVerdict" class="text-xs font-bold"></p></div>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-[11px]">
+                                        <thead class="text-gray-400 border-b">
+                                            <tr>
+                                                <th class="py-1 text-center">Hari</th>
+                                                <th class="py-1 text-center">Tgt</th>
+                                                <th class="py-1 text-center">Carry</th>
+                                                <th class="py-1 text-center">Eff</th>
+                                                <th class="py-1 text-center">Ach</th>
+                                                <th class="py-1 text-center">%</th>
+                                                <th class="py-1 text-center">Sts</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="breakdownTableBody" class="divide-y divide-gray-50"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {{-- Daily Breakdown --}}
-            <div id="dailyBreakdownSection" class="hidden bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden mb-4">
-                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                    <h3 class="text-sm font-semibold truncate"><span id="breakdownName"></span></h3>
-                    <button onclick="document.getElementById('dailyBreakdownSection').classList.add('hidden')" class="w-6 h-6 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition shrink-0">
-                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="p-4">
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                        <div><p class="text-[10px] text-gray-400">Daily Target</p><p id="bdDailyTarget" class="text-sm font-bold text-blue-600"></p></div>
-                        <div><p class="text-[10px] text-gray-400">Weekly Target</p><p id="bdWeeklyTarget" class="text-sm font-bold text-blue-600"></p></div>
-                        <div><p class="text-[10px] text-gray-400">Total Achievement</p><p id="bdTotalAchievement" class="text-sm font-bold text-green-600"></p></div>
+            {{-- ============ MOBILE: Stacked Layout ============ --}}
+            <div class="lg:hidden space-y-4">
+
+                {{-- Input Achievement --}}
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4">
+                    <h3 class="text-sm font-semibold mb-3 text-gray-700">Input Pencapaian</h3>
+
+                    <div class="flex gap-2 mb-3">
+                        <select id="manpowerPickerMobile" onchange="selectManpower(this.value)" class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
+                            <option value="">-- Pilih Manpower --</option>
+                            @foreach ($manpower as $person)
+                                <option value="{{ $person->id }}">{{ $person->nip }} - {{ $person->full_name }}</option>
+                            @endforeach
+                        </select>
+                        <button type="button" onclick="document.getElementById('manpowerPickerMobile').value = ''; hideManpowerInfo();" class="px-3 py-2 bg-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-300 transition shrink-0">Reset</button>
                     </div>
-                    <div class="grid grid-cols-3 gap-2 mb-3">
-                        <div><p class="text-[10px] text-gray-400">Hari Aktif</p><p id="bdDaysActive" class="text-sm font-bold"></p></div>
-                        <div><p class="text-[10px] text-gray-400">Rata-rata</p><p id="bdAvgAchievement" class="text-sm font-bold"></p></div>
-                        <div><p class="text-[10px] text-gray-400">Verdict</p><p id="bdVerdict" class="text-sm font-bold"></p></div>
+
+                    <div id="manpowerInfoSectionMobile" class="hidden">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-3">
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div><p class="text-[10px] text-gray-400">NIP</p><p id="infoNipMobile" class="font-mono text-xs font-semibold"></p></div>
+                                <div><p class="text-[10px] text-gray-400">Nama</p><p id="infoNameMobile" class="text-xs font-semibold truncate"></p></div>
+                                <div><p class="text-[10px] text-gray-400">Contract</p><p id="infoContractMobile" class="text-xs font-semibold"></p></div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 mb-2">
+                                <div><p class="text-[10px] text-gray-400">Week/Day</p><p id="infoWeekDayMobile" class="text-xs font-semibold"></p></div>
+                                <div><p class="text-[10px] text-gray-400">Daily Target</p><p id="infoDailyTargetMobile" class="text-xs font-bold text-blue-600"></p></div>
+                                <div><p class="text-[10px] text-gray-400">Carryover</p><p id="infoCarryoverMobile" class="text-xs font-semibold"></p></div>
+                            </div>
+                            <div class="pt-2 border-t border-gray-200 dark:border-gray-600 grid grid-cols-3 gap-2">
+                                <div><p class="text-[10px] text-gray-400">Eff Target</p><p id="infoEffectiveTargetMobile" class="text-sm font-bold text-blue-600"></p></div>
+                                <div><p class="text-[10px] text-gray-400">Status</p><div id="infoStatusMobile"></div></div>
+                                <div><p class="text-[10px] text-gray-400">Progress</p><div id="infoProgressMobile"></div></div>
+                            </div>
+                        </div>
+
+                        <form action="{{ route('achievements.store') }}" method="POST" id="achievementFormMobile">
+                            @csrf
+                            <input type="hidden" name="date" value="{{ $date->format('Y-m-d') }}">
+                            <input type="hidden" name="manpower_id" id="inputManpowerIdMobile">
+                            <div class="flex gap-2 items-end">
+                                <div class="flex-1">
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">Achievement</label>
+                                    <input type="number" name="achievement" id="inputAchievementMobile" min="0" value="0" required class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm text-center font-bold">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-[10px] text-gray-400 mb-0.5">Notes</label>
+                                    <input type="text" name="notes" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 text-xs">
+                                </div>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition shrink-0">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="whitelistNoticeMobile" class="hidden bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                        <p class="text-purple-700 text-xs font-semibold">
+                            <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            Manpower di-whitelist. Target = 0.
+                        </p>
+                    </div>
+                </div>
+
+                {{-- Daily Breakdown --}}
+                <div id="dailyBreakdownSectionMobile" class="hidden bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-semibold text-gray-600">Detail Mingguan: <span id="breakdownNameMobile"></span></span>
+                        <button onclick="document.getElementById('dailyBreakdownSectionMobile').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <div><p class="text-[10px] text-gray-400">Daily Tgt</p><p id="bdDailyTargetMobile" class="text-xs font-bold text-blue-600"></p></div>
+                        <div><p class="text-[10px] text-gray-400">Weekly Tgt</p><p id="bdWeeklyTargetMobile" class="text-xs font-bold text-blue-600"></p></div>
+                        <div><p class="text-[10px] text-gray-400">Total Ach</p><p id="bdTotalAchievementMobile" class="text-xs font-bold text-green-600"></p></div>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-xs">
-                            <thead class="text-gray-500 border-b">
-                                <tr>
-                                    <th class="py-1.5 text-center">Hari</th>
-                                    <th class="py-1.5 text-center">Target</th>
-                                    <th class="py-1.5 text-center">Carry</th>
-                                    <th class="py-1.5 text-center">Eff</th>
-                                    <th class="py-1.5 text-center">Achieve</th>
-                                    <th class="py-1.5 text-center">%</th>
-                                    <th class="py-1.5 text-center">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="breakdownTableBody" class="divide-y divide-gray-50"></tbody>
+                        <table class="w-full text-[11px]">
+                            <thead class="text-gray-400 border-b"><tr><th class="py-1 text-center">Hari</th><th class="py-1 text-center">Tgt</th><th class="py-1 text-center">Ach</th><th class="py-1 text-center">%</th><th class="py-1 text-center">Sts</th></tr></thead>
+                            <tbody id="breakdownTableBodyMobile" class="divide-y divide-gray-50"></tbody>
                         </table>
                     </div>
                 </div>
-            </div>
 
-            {{-- Manpower Status Table --}}
-            <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
-                <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                    <h3 class="text-sm font-semibold">Status Manpower</h3>
-                </div>
-
-                {{-- Mobile cards --}}
-                <div class="lg:hidden divide-y divide-gray-50">
-                    @forelse ($manpower as $person)
-                        @php
-                            $existingAchievement = $person->achievements->first();
-                            $isWhitelisted = $person->whitelists->isNotEmpty();
-                            $dailyTarget = $person->getActiveDailyTarget($date);
-                            $carryover = $person->getExpectedCarryover($date);
-                            $effectiveTarget = $isWhitelisted ? 0 : ($dailyTarget + $carryover);
-                            $achievementValue = $existingAchievement->achievement ?? 0;
-                            $percentage = $effectiveTarget > 0 ? ($achievementValue / $effectiveTarget) * 100 : ($isWhitelisted ? 100 : 0);
-                            $status = $isWhitelisted ? 'whitelisted' : ($percentage >= 100 ? 'achieved' : ($percentage >= 50 ? 'partial' : 'low'));
-                        @endphp
-                        <div class="p-3 hover:bg-gray-50 cursor-pointer" onclick="selectManpower({{ $person->id }})">
-                            <div class="flex items-center justify-between mb-1">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <span class="font-mono text-xs text-gray-500 shrink-0">{{ $person->nip }}</span>
-                                    <span class="text-xs font-semibold truncate">{{ $person->full_name }}</span>
+                {{-- Manpower Status Cards --}}
+                <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg overflow-hidden">
+                    <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold">Status Manpower</h3>
+                    </div>
+                    <div class="divide-y divide-gray-50">
+                        @forelse ($manpower as $person)
+                            @php
+                                $existingAchievement = $person->achievements->first();
+                                $isWhitelisted = $person->whitelists->isNotEmpty();
+                                $dailyTarget = $person->getActiveDailyTarget($date);
+                                $carryover = $person->getExpectedCarryover($date);
+                                $effectiveTarget = $isWhitelisted ? 0 : ($dailyTarget + $carryover);
+                                $achievementValue = $existingAchievement->achievement ?? 0;
+                                $percentage = $effectiveTarget > 0 ? ($achievementValue / $effectiveTarget) * 100 : ($isWhitelisted ? 100 : 0);
+                                $status = $isWhitelisted ? 'whitelisted' : ($percentage >= 100 ? 'achieved' : ($percentage >= 50 ? 'partial' : 'low'));
+                            @endphp
+                            <div class="p-3 hover:bg-gray-50 cursor-pointer" onclick="selectManpower({{ $person->id }})">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span class="font-mono text-xs text-gray-500 shrink-0">{{ $person->nip }}</span>
+                                        <span class="text-xs font-semibold truncate">{{ $person->full_name }}</span>
+                                    </div>
+                                    <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full {{ $status == 'achieved' ? 'bg-green-100 text-green-700' : ($status == 'partial' ? 'bg-yellow-100 text-yellow-700' : ($status == 'whitelisted' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700')) }}">
+                                        {{ $isWhitelisted ? 'WL' : number_format($percentage, 0) . '%' }}
+                                    </span>
                                 </div>
-                                <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full {{ $status == 'achieved' ? 'bg-green-100 text-green-700' : ($status == 'partial' ? 'bg-yellow-100 text-yellow-700' : ($status == 'whitelisted' ? 'bg-purple-100 text-purple-700' : 'bg-red-100 text-red-700')) }}">
-                                    {{ $isWhitelisted ? 'WL' : number_format($percentage, 0) . '%' }}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-3 text-[10px] text-gray-400">
-                                <span>W{{ $person->getWeekNumber($date) }}/D{{ $person->getDayInWeek($date) }}</span>
-                                <span>Tgt: <span class="font-bold text-gray-600">{{ $effectiveTarget }}</span></span>
-                                <span>Ach: <span class="font-bold {{ $achievementValue > 0 ? 'text-green-600' : 'text-gray-400' }}">{{ $achievementValue }}</span></span>
-                                @if ($carryover != 0)
-                                    <span class="{{ $carryover > 0 ? 'text-red-500' : 'text-green-500' }}">Carry: {{ $carryover > 0 ? '+' : '' }}{{ $carryover }}</span>
+                                <div class="flex items-center gap-3 text-[10px] text-gray-400">
+                                    <span>W{{ $person->getWeekNumber($date) }}/D{{ $person->getDayInWeek($date) }}</span>
+                                    <span>Tgt: <span class="font-bold text-gray-600">{{ $effectiveTarget }}</span></span>
+                                    <span>Ach: <span class="font-bold {{ $achievementValue > 0 ? 'text-green-600' : 'text-gray-400' }}">{{ $achievementValue }}</span></span>
+                                    @if ($carryover != 0)
+                                        <span class="{{ $carryover > 0 ? 'text-red-500' : 'text-green-500' }}">Carry: {{ $carryover > 0 ? '+' : '' }}{{ $carryover }}</span>
+                                    @endif
+                                </div>
+                                @if (!$isWhitelisted && $effectiveTarget > 0)
+                                    <div class="mt-1.5 w-full bg-gray-200 rounded-full h-1">
+                                        <div class="{{ $percentage >= 100 ? 'bg-green-500' : ($percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} h-1 rounded-full" style="width: {{ min($percentage, 100) }}%"></div>
+                                    </div>
                                 @endif
                             </div>
-                            @if (!$isWhitelisted && $effectiveTarget > 0)
-                                <div class="mt-1.5 w-full bg-gray-200 rounded-full h-1">
-                                    <div class="{{ $percentage >= 100 ? 'bg-green-500' : ($percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} h-1 rounded-full" style="width: {{ min($percentage, 100) }}%"></div>
-                                </div>
-                            @endif
-                        </div>
-                    @empty
-                        <div class="p-6 text-center text-xs text-gray-400">No manpower found.</div>
-                    @endforelse
-                </div>
-
-                {{-- Desktop table --}}
-                <div class="hidden lg:block overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr class="text-[11px] text-gray-500">
-                                <th class="px-3 py-2 text-left">NIP</th>
-                                <th class="px-3 py-2 text-left">Name</th>
-                                <th class="px-3 py-2 text-left">Contract</th>
-                                <th class="px-3 py-2 text-center">W/D</th>
-                                <th class="px-3 py-2 text-center">Target</th>
-                                <th class="px-3 py-2 text-center">Carry</th>
-                                <th class="px-3 py-2 text-center">Eff Target</th>
-                                <th class="px-3 py-2 text-center">Achieve</th>
-                                <th class="px-3 py-2 text-center">Status</th>
-                                <th class="px-3 py-2 text-center">Progress</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            @forelse ($manpower as $person)
-                                @php
-                                    $existingAchievement = $person->achievements->first();
-                                    $isWhitelisted = $person->whitelists->isNotEmpty();
-                                    $dailyTarget = $person->getActiveDailyTarget($date);
-                                    $carryover = $person->getExpectedCarryover($date);
-                                    $effectiveTarget = $isWhitelisted ? 0 : ($dailyTarget + $carryover);
-                                    $achievementValue = $existingAchievement->achievement ?? 0;
-                                    $percentage = $effectiveTarget > 0 ? ($achievementValue / $effectiveTarget) * 100 : ($isWhitelisted ? 100 : 0);
-                                    $status = $isWhitelisted ? 'whitelisted' : ($percentage >= 100 ? 'achieved' : ($percentage >= 50 ? 'partial' : 'low'));
-                                @endphp
-                                <tr class="{{ $isWhitelisted ? 'bg-purple-50 dark:bg-purple-900' : '' }} hover:bg-gray-50 cursor-pointer" onclick="selectManpower({{ $person->id }})">
-                                    <td class="px-3 py-2 font-mono text-xs">{{ $person->nip }}</td>
-                                    <td class="px-3 py-2 text-xs">{{ $person->full_name }}</td>
-                                    <td class="px-3 py-2">
-                                        <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full {{ $person->contract_type == 'dedicated' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">{{ ucfirst($person->contract_type) }}</span>
-                                    </td>
-                                    <td class="px-3 py-2 text-xs text-center">{{ $person->getWeekNumber($date) }}/{{ $person->getDayInWeek($date) }}</td>
-                                    <td class="px-3 py-2 text-xs text-center font-semibold">{{ $dailyTarget }}</td>
-                                    <td class="px-3 py-2 text-xs text-center font-semibold {{ $carryover > 0 ? 'text-red-600' : ($carryover < 0 ? 'text-green-600' : 'text-gray-500') }}">{{ $carryover > 0 ? '+' : '' }}{{ $carryover }}</td>
-                                    <td class="px-3 py-2 text-xs text-center font-semibold {{ $isWhitelisted ? 'text-purple-600' : ($carryover < 0 ? 'text-green-600' : 'text-blue-600') }}">
-                                        @if ($isWhitelisted)
-                                            <span class="inline-flex items-center"><svg class="w-3 h-3 mr-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>WL</span>
-                                        @else
-                                            {{ $effectiveTarget }}
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2 text-xs text-center font-bold {{ $achievementValue > 0 ? 'text-green-600' : 'text-gray-400' }}">{{ $achievementValue }}</td>
-                                    <td class="px-3 py-2 text-center">
-                                        @if ($isWhitelisted)
-                                            <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-purple-100 text-purple-700">WL</span>
-                                        @else
-                                            <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full {{ $status == 'achieved' ? 'bg-green-100 text-green-700' : ($status == 'partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">{{ number_format($percentage, 0) }}%</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2">
-                                        @if (!$isWhitelisted && $effectiveTarget > 0)
-                                            <div class="w-full bg-gray-200 rounded-full h-1.5">
-                                                <div class="{{ $percentage >= 100 ? 'bg-green-500' : ($percentage >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} h-1.5 rounded-full" style="width: {{ min($percentage, 100) }}%"></div>
-                                            </div>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="10" class="px-4 py-6 text-center text-xs text-gray-400">No manpower found.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
-                    {{ $manpower->links() }}
+                        @empty
+                            <div class="p-6 text-center text-xs text-gray-400">No manpower found.</div>
+                        @endforelse
+                    </div>
+                    <div class="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+                        {{ $manpower->links() }}
+                    </div>
                 </div>
             </div>
         </div>
@@ -353,11 +483,16 @@
         </div>
     </div>
 
+    {{-- Hidden manpower data for JS --}}
+    <script type="application/json" id="manpowerData">
+        @json($manpower->keyBy('id')->map(fn($p) => ['nip' => $p->nip, 'name' => $p->full_name, 'contract' => $p->contract_type]))
+    </script>
+
     <script>
         const dateValue = '{{ $date->format('Y-m-d') }}';
-        const currentYear = {{ $date->format('Y') }};
         const apiUrl = '{{ route("api.achievements.manpower-info") }}';
         const breakdownApiUrl = '{{ route("api.achievements.daily-breakdown") }}';
+        const allManpower = JSON.parse(document.getElementById('manpowerData').textContent);
 
         function changeYear() {
             const year = document.getElementById('yearPicker').value;
@@ -365,67 +500,98 @@
         }
 
         function selectManpower(id) {
-            document.getElementById('manpowerPicker').value = id;
-            loadManpowerInfo();
+            if (!id) { hideManpowerInfo(); return; }
+
+            // Highlight row in desktop table
+            document.querySelectorAll('.manpower-row').forEach(r => r.classList.remove('bg-orange-50', 'dark:bg-orange-900/20'));
+            const row = document.querySelector(`[data-manpower-id="${id}"]`);
+            if (row) row.classList.add('bg-orange-50', 'dark:bg-orange-900/20');
+
+            // Set mobile picker
+            const mp = document.getElementById('manpowerPickerMobile');
+            if (mp) mp.value = id;
+
+            loadManpowerInfo(id);
         }
 
-        function loadManpowerInfo() {
-            const manpowerId = document.getElementById('manpowerPicker').value;
-            if (!manpowerId) { hideManpowerInfo(); return; }
+        function loadManpowerInfo(id) {
+            if (!id) id = document.getElementById('manpowerPickerMobile')?.value;
+            if (!id) { hideManpowerInfo(); return; }
 
-            fetch(`${apiUrl}?manpower_id=${manpowerId}&date=${dateValue}`)
+            fetch(`${apiUrl}?manpower_id=${id}&date=${dateValue}`)
                 .then(r => r.json())
                 .then(data => {
+                    const isDesktop = window.innerWidth >= 1024;
+                    const suffix = isDesktop ? '' : 'Mobile';
+
                     if (data.is_whitelisted) {
-                        document.getElementById('manpowerInfoSection').classList.add('hidden');
-                        document.getElementById('whitelistNotice').classList.remove('hidden');
-                        document.getElementById('dailyBreakdownSection').classList.add('hidden');
+                        document.getElementById(`manpowerInfoSection${suffix}`).classList.add('hidden');
+                        document.getElementById(`whitelistNotice${suffix}`).classList.remove('hidden');
+                        document.getElementById(`dailyBreakdownSection${suffix}`)?.classList.add('hidden');
+                        if (!isDesktop) document.getElementById('manpowerInfoSectionMobile').classList.add('hidden');
+                        if (isDesktop) {
+                            document.getElementById('rightPanelDefault').classList.add('hidden');
+                            document.getElementById('rightPanelActive').classList.remove('hidden');
+                        }
                         return;
                     }
 
-                    document.getElementById('whitelistNotice').classList.add('hidden');
-                    document.getElementById('manpowerInfoSection').classList.remove('hidden');
-                    document.getElementById('inputManpowerId').value = data.manpower_id;
-                    document.getElementById('infoNip').textContent = data.nip;
-                    document.getElementById('infoName').textContent = data.full_name;
-                    document.getElementById('infoContract').textContent = data.contract_type === 'dedicated' ? 'Dedicated' : 'Mitra';
-                    document.getElementById('infoWeekDay').textContent = `W${data.week_number}/D${data.day_in_week}`;
-                    document.getElementById('infoDailyTarget').textContent = data.daily_target;
-                    document.getElementById('infoCarryover').textContent = data.carryover;
-                    document.getElementById('infoEffectiveTarget').textContent = data.effective_target;
-                    document.getElementById('inputAchievement').value = data.existing_achievement;
+                    document.getElementById(`whitelistNotice${suffix}`).classList.add('hidden');
+                    document.getElementById(`manpowerInfoSection${suffix}`).classList.remove('hidden');
+
+                    if (isDesktop) {
+                        document.getElementById('rightPanelDefault').classList.add('hidden');
+                        document.getElementById('rightPanelActive').classList.remove('hidden');
+                        document.getElementById('infoAvatar').textContent = data.full_name.charAt(0);
+                        const cb = document.getElementById('infoContractBadge');
+                        cb.textContent = data.contract_type === 'dedicated' ? 'Dedicated' : 'Mitra';
+                        cb.className = `px-2 py-0.5 text-[10px] font-semibold rounded-full shrink-0 ${data.contract_type === 'dedicated' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`;
+                    }
+
+                    document.getElementById(`inputManpowerId${suffix}`).value = data.manpower_id;
+                    document.getElementById(`infoNip${suffix}`).textContent = data.nip;
+                    document.getElementById(`infoName${suffix}`).textContent = data.full_name;
+                    document.getElementById(`infoContract${suffix}`).textContent = data.contract_type === 'dedicated' ? 'Dedicated' : 'Mitra';
+                    document.getElementById(`infoWeekDay${suffix}`).textContent = `W${data.week_number}/D${data.day_in_week}`;
+                    document.getElementById(`infoDailyTarget${suffix}`).textContent = data.daily_target;
+                    document.getElementById(`infoCarryover${suffix}`).textContent = data.carryover;
+                    document.getElementById(`infoEffectiveTarget${suffix}`).textContent = data.effective_target;
+                    document.getElementById(`inputAchievement${suffix}`).value = data.existing_achievement;
 
                     const pct = data.effective_target > 0 ? (data.existing_achievement / data.effective_target) * 100 : 0;
                     const sc = pct >= 100 ? 'bg-green-100 text-green-800' : (pct >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
                     const st = pct >= 100 ? 'Achieved' : (pct >= 50 ? 'Partial' : 'Low');
-                    document.getElementById('infoStatus').innerHTML = `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${sc}">${st} ${Math.round(pct)}%</span>`;
+                    document.getElementById(`infoStatus${suffix}`).innerHTML = `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${sc}">${st} ${Math.round(pct)}%</span>`;
                     const pc = pct >= 100 ? 'bg-green-600' : (pct >= 50 ? 'bg-yellow-600' : 'bg-red-600');
-                    document.getElementById('infoProgress').innerHTML = `<div class="w-full bg-gray-200 rounded-full h-1.5 mt-1"><div class="${pc} h-1.5 rounded-full" style="width: ${Math.min(pct, 100)}%"></div></div>`;
+                    document.getElementById(`infoProgress${suffix}`).innerHTML = `<div class="w-full bg-gray-200 rounded-full h-1.5 mt-1"><div class="${pc} h-1.5 rounded-full" style="width: ${Math.min(pct, 100)}%"></div></div>`;
 
-                    loadDailyBreakdown(manpowerId);
+                    loadDailyBreakdown(id, suffix);
                 })
                 .catch(e => { console.error(e); alert('Gagal memuat data'); });
         }
 
-        function loadDailyBreakdown(manpowerId) {
-            fetch(`${breakdownApiUrl}?manpower_id=${manpowerId}&date=${dateValue}`)
+        function loadDailyBreakdown(id, suffix = '') {
+            fetch(`${breakdownApiUrl}?manpower_id=${id}&date=${dateValue}`)
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('dailyBreakdownSection').classList.remove('hidden');
-                    document.getElementById('breakdownName').textContent = `${data.nip} - ${data.full_name}`;
-                    document.getElementById('bdDailyTarget').textContent = data.daily_target;
-                    document.getElementById('bdWeeklyTarget').textContent = data.weekly_target;
-                    document.getElementById('bdTotalAchievement').textContent = data.total_achievement;
-                    document.getElementById('bdDaysActive').textContent = `${data.days_with_achievement}/${data.days.length}`;
-                    document.getElementById('bdAvgAchievement').textContent = data.avg_achievement;
-                    document.getElementById('bdVerdict').innerHTML = data.is_above_target
+                    document.getElementById(`dailyBreakdownSection${suffix}`).classList.remove('hidden');
+                    document.getElementById(`breakdownName${suffix}`).textContent = `${data.nip} - ${data.full_name}`;
+                    document.getElementById(`bdDailyTarget${suffix}`).textContent = data.daily_target;
+                    document.getElementById(`bdWeeklyTarget${suffix}`).textContent = data.weekly_target;
+                    document.getElementById(`bdTotalAchievement${suffix}`).textContent = data.total_achievement;
+                    document.getElementById(`bdDaysActive${suffix}`).textContent = `${data.days_with_achievement}/${data.days.length}`;
+                    document.getElementById(`bdAvgAchievement${suffix}`).textContent = data.avg_achievement;
+                    document.getElementById(`bdVerdict${suffix}`).innerHTML = data.is_above_target
                         ? '<span class="text-green-600">✓ Above</span>'
                         : '<span class="text-red-600">✗ Below</span>';
 
-                    document.getElementById('breakdownTableBody').innerHTML = data.days.map(day => {
+                    document.getElementById(`breakdownTableBody${suffix}`).innerHTML = data.days.map(day => {
                         const bg = day.is_whitelisted ? 'bg-purple-50' : (day.is_today ? 'bg-blue-50' : '');
                         const pc = day.percentage >= 100 ? 'text-green-600' : (day.percentage >= 50 ? 'text-yellow-600' : 'text-red-600');
                         const sl = day.is_whitelisted ? '<span class="text-purple-600">WL</span>' : (day.percentage >= 100 ? '<span class="text-green-600">✓</span>' : (day.percentage > 0 ? `<span class="${pc}">${day.percentage}%</span>` : '-'));
+                        if (suffix === 'Mobile') {
+                            return `<tr class="${bg}"><td class="py-1 text-center">${day.day_name}</td><td class="py-1 text-center">${day.is_whitelisted ? 0 : day.daily_target}</td><td class="py-1 text-center font-bold">${day.achievement}</td><td class="py-1 text-center ${pc}">${day.percentage}%</td><td class="py-1 text-center">${sl}</td></tr>`;
+                        }
                         return `<tr class="${bg}"><td class="py-1.5 text-center">${day.day_name}</td><td class="py-1.5 text-center">${day.is_whitelisted ? 0 : day.daily_target}</td><td class="py-1.5 text-center ${day.carryover > 0 ? 'text-red-600' : (day.carryover < 0 ? 'text-green-600' : '')}">${day.carryover}</td><td class="py-1.5 text-center font-semibold">${day.effective_target}</td><td class="py-1.5 text-center font-bold">${day.achievement}</td><td class="py-1.5 text-center ${pc}">${day.percentage}%</td><td class="py-1.5 text-center">${sl}</td></tr>`;
                     }).join('');
                 })
@@ -433,13 +599,19 @@
         }
 
         function hideManpowerInfo() {
-            document.getElementById('manpowerInfoSection').classList.add('hidden');
-            document.getElementById('whitelistNotice').classList.add('hidden');
-            document.getElementById('dailyBreakdownSection').classList.add('hidden');
-            document.getElementById('inputManpowerId').value = '';
+            ['manpowerInfoSection', 'whitelistNotice', 'dailyBreakdownSection'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+                document.getElementById(id + 'Mobile')?.classList.add('hidden');
+            });
+            document.getElementById('inputManpowerId')?.setAttribute('value', '');
+            document.getElementById('inputManpowerIdMobile')?.setAttribute('value', '');
+            // Show default panel on desktop
+            document.getElementById('rightPanelDefault')?.classList.remove('hidden');
+            document.getElementById('rightPanelActive')?.classList.add('hidden');
+            // Remove row highlight
+            document.querySelectorAll('.manpower-row').forEach(r => r.classList.remove('bg-orange-50', 'dark:bg-orange-900/20'));
         }
 
-        // Auto-scroll day slider to selected day
         document.addEventListener('DOMContentLoaded', () => {
             const slider = document.getElementById('daySlider');
             if (slider) {
