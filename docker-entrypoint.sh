@@ -13,12 +13,8 @@ if ! grep -q "APP_URL" /var/www/html/.env; then
     echo "APP_URL=https://${RAILWAY_PUBLIC_DOMAIN}" >> /var/www/html/.env
 fi
 
-php artisan config:clear
-php artisan config:cache
-php artisan route:cache
-
 php artisan migrate --force
 
-php artisan view:clear || true
+mkdir -p storage/framework/views storage/framework/cache
 
 php artisan serve --host=0.0.0.0 --port=${PORT:-8000}

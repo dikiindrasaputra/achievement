@@ -22,7 +22,8 @@ RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --prefer-dist --optimiz
 
 RUN npm ci && npm run build
 
-RUN chown -R www-data:www-data /var/www/html \
+RUN mkdir -p storage/framework/views storage/framework/cache storage/logs \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 COPY docker-entrypoint.sh /usr/local/bin/
