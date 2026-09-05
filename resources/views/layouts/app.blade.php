@@ -22,6 +22,16 @@
 
             <!-- Main Content -->
             <div class="flex-1 overflow-y-auto">
+                <!-- Mobile Header -->
+                <div class="lg:hidden flex items-center px-4 py-3 border-b bg-white sticky top-0 z-30" style="border-color: #EE4D2D;">
+                    <button @click="open = true" class="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <span class="ml-3 text-lg font-bold" style="color: #EE4D2D;">SPX</span>
+                    <span class="ml-1 text-sm text-gray-600">Achievement</span>
+                </div>
                 <main class="p-6">
                     {{ $slot }}
                 </main>
