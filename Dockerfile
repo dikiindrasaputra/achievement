@@ -17,13 +17,13 @@ RUN apk add --no-cache nodejs npm
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --prefer-dist
 
 COPY . .
 
 RUN npm ci && npm run build
 
-RUN php artisan view:clear && composer dump-autoload --optimize
+RUN php artisan view:clear
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
