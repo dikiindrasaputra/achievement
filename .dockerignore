@@ -2,7 +2,8 @@ node_modules
 vendor
 .git
 .env
-.env.*
+.env.backup
+.env.production
 storage/logs/*
 storage/framework/views/*
 storage/framework/cache/*
