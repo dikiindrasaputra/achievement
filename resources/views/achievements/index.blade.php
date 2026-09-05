@@ -450,8 +450,13 @@
             if (!id) id = document.getElementById('manpowerPickerMobile')?.value;
             if (!id) { hideManpowerInfo(); return; }
 
-            fetch(`${apiUrl}?manpower_id=${id}&date=${dateValue}`)
-                .then(r => r.json())
+            fetch(`${apiUrl}?manpower_id=${id}&date=${dateValue}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
                 .then(data => {
                     const isDesktop = window.innerWidth >= 1024;
                     const suffix = isDesktop ? '' : 'Mobile';
@@ -501,12 +506,17 @@
 
                     loadDailyBreakdown(id, suffix);
                 })
-                .catch(e => { console.error(e); alert('Gagal memuat data'); });
+                .catch(e => { console.error('manpower-info error:', e); alert('Gagal memuat data: ' + e.message); });
         }
 
         function loadDailyBreakdown(id, suffix = '') {
-            fetch(`${breakdownApiUrl}?manpower_id=${id}&date=${dateValue}`)
-                .then(r => r.json())
+            fetch(`${breakdownApiUrl}?manpower_id=${id}&date=${dateValue}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                    return r.json();
+                })
                 .then(data => {
                     document.getElementById(`bdDailyTarget${suffix}`).textContent = data.daily_target;
                     document.getElementById(`bdWeeklyTarget${suffix}`).textContent = data.weekly_target;
@@ -537,10 +547,13 @@
                             <td class="py-1.5 text-center ${carryClass}">${carryPrefix}${day.carryover}</td>
                             <td class="py-1.5 text-center font-semibold text-blue-600">${day.effective_target}</td>
                             <td class="py-1.5 text-center">
-                                <input type="number" min="0" value="${day.achievement}"
-                                    class="day-ach-input w-14 text-center text-xs font-bold rounded border ${isSelected ? 'border-orange-300 focus:ring-orange-500 focus:border-orange-500' : 'border-gray-200 focus:ring-orange-500 focus:border-orange-500'} py-0.5"
-                                    data-date="${day.date}" data-manpower-id="${data.manpower_id}"
-                                    onchange="autoSaveDay(this, event)" onkeydown="autoSaveDay(this, event)">
+                                <div class="flex flex-col items-center">
+                                    <input type="number" min="0" value="${day.achievement}"
+                                        class="day-ach-input w-14 text-center text-xs font-bold rounded border ${isSelected ? 'border-orange-300 focus:ring-orange-500 focus:border-orange-500' : 'border-gray-200 focus:ring-orange-500 focus:border-orange-500'} py-0.5"
+                                        data-date="${day.date}" data-manpower-id="${data.manpower_id}"
+                                        onchange="autoSaveDay(this, event)" onkeydown="autoSaveDay(this, event)">
+                                    ${day.achievement === 0 && !day.is_whitelisted ? `<span class="text-[9px] text-orange-400 mt-0.5">rekom: ${day.effective_target}</span>` : ''}
+                                </div>
                             </td>
                             <td class="py-1.5 text-center">
                                 <span class="day-pct ${day.percentage >= 100 ? 'text-green-600' : (day.percentage >= 50 ? 'text-yellow-600' : 'text-red-600')}">${day.percentage}%</span>
