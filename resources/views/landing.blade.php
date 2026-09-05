@@ -62,25 +62,20 @@
 
     {{-- Week Days --}}
     {{-- Mobile: horizontal slider, 3 visible, today centered --}}
-    <div class="lg:hidden mt-4">
-        @php
-            $todayIndex = collect($weekDays)->search(fn($d) => $d['is_today']);
-            $startIdx = max(0, min($todayIndex - 1, count($weekDays) - 3));
-            $visibleDays = collect($weekDays)->slice($startIdx, 3);
-        @endphp
-        <div class="px-4">
-            <div class="flex gap-2 justify-center">
-                @foreach ($visibleDays as $day)
-                    <div class="flex-1 text-center px-2 py-3 rounded-lg {{ $day['is_today'] ? 'border-2 font-bold' : 'border border-gray-200' }}"
-                         style="{{ $day['is_today'] ? 'border-color: #EE4D2D; background-color: #FFF5F2;' : '' }}">
-                        <div class="text-[10px] text-gray-400">{{ $day['day_name'] }}</div>
-                        <div class="text-xs {{ $day['is_today'] ? 'font-bold' : 'font-medium' }}" style="{{ $day['is_today'] ? 'color: #EE4D2D;' : '' }}">
-                            Day {{ $day['day_number'] }}
-                        </div>
-                        <div class="text-[10px] text-gray-400">{{ $day['date_display'] }}</div>
+    {{-- Mobile: all 7 days in a slider, today centered --}}
+    <div class="lg:hidden mt-4" x-data="{ init() { const el = $refs.daySlider; if (!el) return; const today = el.querySelector('[data-today]'); if (today) { const scrollLeft = today.offsetLeft - el.offsetWidth / 2 + today.offsetWidth / 2; el.scrollTo({ left: scrollLeft, behavior: 'smooth' }); } } }" x-init="init()">
+        <div x-ref="daySlider" class="flex gap-2 overflow-x-auto hide-scrollbar scroll-snap-x px-4 py-1">
+            @foreach ($weekDays as $day)
+                <div data-today="{{ $day['is_today'] ? '1' : '0' }}"
+                     class="flex-shrink-0 w-[30%] scroll-snap-center text-center px-2 py-3 rounded-lg {{ $day['is_today'] ? 'border-2 font-bold' : 'border border-gray-200' }}"
+                     style="{{ $day['is_today'] ? 'border-color: #EE4D2D; background-color: #FFF5F2;' : '' }}">
+                    <div class="text-[10px] text-gray-400">{{ $day['day_name'] }}</div>
+                    <div class="text-xs {{ $day['is_today'] ? 'font-bold' : 'font-medium' }}" style="{{ $day['is_today'] ? 'color: #EE4D2D;' : '' }}">
+                        Day {{ $day['day_number'] }}
                     </div>
-                @endforeach
-            </div>
+                    <div class="text-[10px] text-gray-400">{{ $day['date_display'] }}</div>
+                </div>
+            @endforeach
         </div>
     </div>
 
