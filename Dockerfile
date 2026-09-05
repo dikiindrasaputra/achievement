@@ -16,10 +16,9 @@ RUN apk add --no-cache nodejs npm
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist
-
 COPY . .
+
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --prefer-dist --optimize-autoloader
 
 RUN npm ci && npm run build
 
