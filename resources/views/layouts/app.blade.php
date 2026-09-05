@@ -15,6 +15,14 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
+    <style>
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
     <body class="font-sans antialiased bg-white">
         <div x-data="{ open: false, collapsed: localStorage.getItem('sidebar-collapsed') === 'true' }" class="flex h-screen overflow-hidden">
             <!-- Sidebar -->
