@@ -240,6 +240,7 @@
                                             <th class="py-1.5 text-center w-10">Eff</th>
                                             <th class="py-1.5 text-center">Ach</th>
                                             <th class="py-1.5 text-center w-12">%</th>
+                                            <th class="py-1.5 text-center w-14">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody id="allDaysTableBody" class="divide-y divide-gray-50"></tbody>
@@ -540,8 +541,12 @@
                         const achClass = day.achievement > 0 ? 'text-green-600 font-bold' : 'text-gray-300';
 
                         if (day.is_whitelisted) {
-                            return `<tr class="${rowBg}"><td class="py-1.5 text-center font-medium">${day.day_name}</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center"><span class="text-purple-500 text-[10px]">WL</span></td><td class="py-1.5 text-center"><span class="text-purple-500">✓</span></td><td class="py-1.5 text-center">-</td></tr>`;
+                            return `<tr class="${rowBg}"><td class="py-1.5 text-center font-medium">${day.day_name}</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center text-gray-400">0</td><td class="py-1.5 text-center"><span class="text-purple-500 text-[10px]">WL</span></td><td class="py-1.5 text-center"><span class="text-purple-500">✓</span></td><td class="py-1.5 text-center"><span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-purple-100 text-purple-700">WL</span></td></tr>`;
                         }
+
+                        const initPct = day.effective_target > 0 ? Math.round((day.achievement / day.effective_target) * 100) : 0;
+                        const initCls = initPct >= 100 ? 'bg-green-100 text-green-700' : (initPct >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
+                        const initTxt = day.effective_target === 0 ? '-' : (initPct >= 100 ? 'Done' : (initPct >= 50 ? 'Partial' : 'Low'));
 
                         return `<tr class="${rowBg}" data-day-date="${day.date}">
                             <td class="py-1.5 text-center font-medium ${isSelected ? 'text-orange-700' : ''}">${day.day_name}${isSelected ? ' ●' : ''}</td>
@@ -552,18 +557,45 @@
                                 <div class="flex flex-col items-center">
                                     <input type="number" min="0" value="${day.achievement}"
                                         class="day-ach-input w-14 text-center text-xs font-bold rounded border ${isSelected ? 'border-orange-300 focus:ring-orange-500 focus:border-orange-500' : 'border-gray-200 focus:ring-orange-500 focus:border-orange-500'} py-0.5"
-                                        data-date="${day.date}" data-manpower-id="${data.manpower_id}" data-original="${day.achievement}"
-                                        oninput="checkDirty()">
+                                        data-date="${day.date}" data-manpower-id="${data.manpower_id}" data-original="${day.achievement}" data-eff="${day.effective_target}"
+                                        oninput="simulateRow(this)">
                                     ${day.achievement === 0 && !day.is_whitelisted ? `<span class="text-[9px] text-orange-400 mt-0.5">rekom: ${day.effective_target}</span>` : ''}
                                 </div>
                             </td>
                             <td class="py-1.5 text-center">
                                 <span class="day-pct ${day.percentage >= 100 ? 'text-green-600' : (day.percentage >= 50 ? 'text-yellow-600' : 'text-red-600')}">${day.percentage}%</span>
                             </td>
+                            <td class="py-1.5 text-center">
+                                <span class="day-sts"><span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${initCls}">${initTxt}</span></span>
+                            </td>
                         </tr>`;
                     }).join('');
                 })
                 .catch(e => console.error(e));
+        }
+
+        function simulateRow(input) {
+            const row = input.closest('tr');
+            const eff = parseInt(input.dataset.eff) || 0;
+            const ach = parseInt(input.value) || 0;
+            const pct = eff > 0 ? Math.round((ach / eff) * 100) : 0;
+
+            const pctEl = row.querySelector('.day-pct');
+            pctEl.textContent = pct + '%';
+            pctEl.className = `day-pct text-[11px] font-bold ${pct >= 100 ? 'text-green-600' : (pct >= 50 ? 'text-yellow-600' : 'text-red-600')}`;
+
+            const stsEl = row.querySelector('.day-sts');
+            if (stsEl) {
+                if (eff === 0) {
+                    stsEl.innerHTML = '<span class="text-gray-300">-</span>';
+                } else {
+                    const cls = pct >= 100 ? 'bg-green-100 text-green-700' : (pct >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700');
+                    const txt = pct >= 100 ? 'Done' : (pct >= 50 ? 'Partial' : 'Low');
+                    stsEl.innerHTML = `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${cls}">${txt}</span>`;
+                }
+            }
+
+            checkDirty();
         }
 
         function checkDirty() {
